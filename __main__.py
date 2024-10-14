@@ -81,7 +81,10 @@ def sklearn_tests(dataset_id,dataset):
                              X_train.shape[1])
 
     # Get sklearn classifiers or regressors based on the problem type
-    classifiers = get_classifiers_sklearn()
+    classifiers = [
+        LinearRegression(),
+        DecisionTreeRegressor(),
+    ]
     # Evaluate each model using the training and test data
     best_score = -1
     best_model = None
@@ -94,80 +97,36 @@ def sklearn_tests(dataset_id,dataset):
 
     joblib.dump(best_model, 'best_model.joblib')
 
+def xgb_tests(dataset_id,dataset):
 
-def get_classifiers_sklearn():
-        from sklearn.ensemble import ExtraTreesRegressor
-        n = 2
-        return [
-            #LinearRegression(),
-            #DecisionTreeRegressor(),
-            xgb.XGBRegressor(
-                n_estimators=n**9,
-                learning_rate=0.1,
-                device='cuda',  # Use GPU acceleratio
-                n_jobs=-1,
+    # Load the dataset and split into training and testing sets
 
-            ),
-            xgb.XGBRFRegressor(
-                n_estimators=n**9,
-                learning_rate=0.1,
-                device='cuda',  # Use GPU acceleratio
-                n_jobs=-1,
-            ),
-            xgb.XGBRegressor(
-                n_estimators=n**10,
+    X_train, X_test, y_train, y_test = dataset
+
+    data_logger = DataLogger(dataset_id,X_train.shape, len(X_train.shape), X_train.shape[0],
+                             X_train.shape[1])
+
+
+    # Evaluate each model using the training and test data
+    best_score = -1
+    best_model = None
+    nums = [2,4,8,16,32,64,128,256,512,1024]
+    for n in nums:
+        model = xgb.XGBRegressor(
+                n_estimators=n,
                 learning_rate=0.1,
                 device='cuda',  # Use GPU acceleratio
                 n_jobs=-1,
 
-            ),
-            xgb.XGBRFRegressor(
-                n_estimators=n**10,
-                learning_rate=0.1,
-                device='cuda',  # Use GPU acceleratio
-                n_jobs=-1,
-            ),
-            xgb.XGBRegressor(
-                n_estimators=n**11,
-                learning_rate=0.1,
-                device='cuda',  # Use GPU acceleratio
-                n_jobs=-1,
-
-            ),
-            xgb.XGBRFRegressor(
-                n_estimators=n**11,
-                learning_rate=0.1,
-                device='cuda',  # Use GPU acceleratio
-                n_jobs=-1,
-            ),
-            xgb.XGBRegressor(
-                n_estimators=n**12,
-                learning_rate=0.1,
-                device='cuda',  # Use GPU acceleratio
-                n_jobs=-1,
-
-            ),
-            xgb.XGBRFRegressor(
-                n_estimators=n**12,
-                learning_rate=0.1,
-                device='cuda',  # Use GPU acceleratio
-                n_jobs=-1,
-            ),
-            xgb.XGBRegressor(
-                n_estimators=n**13,
-                learning_rate=0.1,
-                device='cuda',  # Use GPU acceleratio
-                n_jobs=-1,
-
-            ),
-            xgb.XGBRFRegressor(
-                n_estimators=n**13,
-                learning_rate=0.1,
-                device='cuda',  # Use GPU acceleratio
-                n_jobs=-1,
             )
+        score = evaluate_model(model, X_train, X_test, y_train, y_test, data_logger)
+        print(f"Model Complete:{model}")
+        if score > best_score:
+            best_score = score
+            best_model = model
 
-        ]
+    joblib.dump(best_model, 'best_model.joblib')
+
 def nn_tests(dataset_id, dataset):
     """ Test neural network models on a specified dataset.
 
@@ -220,14 +179,11 @@ def create_nn_models(problem_type: str, output_size: int,num_layers=2,image_chec
     # Define a range of hidden layer sizes
 
     hiddens = []
-    iters = 13
+    iters = 15
     nn = 2
-    for i in range(9,iters):
-        neurons = nn * (2 ** i)
-        hiddens.append((neurons, neurons))
     for i in range(iters):
         neurons = nn * (2 ** i)
-        hiddens.append((neurons, neurons,neurons))
+        hiddens.append((neurons, neurons))
     dropout = 0
 
     return [EasyNeuralNet(output_size,h,dropout,batch_norm=False,learning_rate=.001,image_bool=False,problem_type=1,verbose=True)
@@ -250,9 +206,9 @@ def lstm_tests(dataset_id, df,dims=2,stock_check=False):
         inputs = X_train.shape[2]
 
     X_train, X_test, y_train = convert_data_to_tensors(X_train, X_test, y_train, image_bool=not stock_check)
-    neuron_sizes = [1,2,4,8,16,32,64,128,256,512,1024]
+    neuron_sizes = [2,4,8,16,32,64,128,256,512,1024]
     layers = [1]
-    dropouts = [.5]
+    dropouts = []
     for l in layers:
         for n in neuron_sizes:
             for dropout in dropouts:
@@ -264,7 +220,7 @@ def lstm_tests(dataset_id, df,dims=2,stock_check=False):
 
 if __name__ == '__main__':
     id = "Test 1"
-    twod = True
+    twod = False
     ld = LoadStockDataset(dataset_index=1,normalize=1)
 
     if twod:
@@ -272,6 +228,7 @@ if __name__ == '__main__':
         lstm_tests(id,dataset)
     else:
         dataset = ld.get_train_test_split()
-        dummy_tests(id,dataset,)
+        dummy_tests(id,dataset)
         sklearn_tests(id,dataset)
-        #nn_tests(id,dataset)
+        xgb_tests(id,dataset)
+        nn_tests(id,dataset)

@@ -39,7 +39,7 @@ class CreateStockData:
         self.add_ta = add_technical_indicators
 
         self.base_dir = Path(
-            f"../Data_d-{self.observation_days}_t-{self.target_days}")
+            f"Data_d-{self.observation_days}_t-{self.target_days}")
         self.process_stock_data()
     
    
@@ -69,10 +69,7 @@ class CreateStockData:
                 data = self.add_technical_indicators(data)
             data.index = self.convert_datetime_to_int(data.index)
             # Create a DataFrame with one-hot encoded column for this ticker
-            ticker_df = pd.DataFrame(0, index=data.index, columns=self.tickers)
-            ticker_df[ticker] = 1
-            # Concatenate the one-hot encoded column with the data
-            data = pd.concat([ticker_df,data], axis=1)
+            data = pd.concat([data], axis=1)
             data_frames.append(data)
 
         combined_data = pd.concat(data_frames, axis=0).reset_index()
@@ -145,8 +142,6 @@ class CreateStockData:
 
 
 if __name__ == '__main__':
-    tickers = [
-'^GSPC',
-'GC=F',
-'BTC-USD',]
-    St = CreateStockData(1, 10, tickers, add_technical_indicators=True)
+    num_stocks = 1
+    tickers = filter_companies("comps.csv", num_stocks)["Symbol"]
+    St = CreateStockData(10, 10, tickers, add_technical_indicators=False)
