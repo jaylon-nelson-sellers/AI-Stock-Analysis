@@ -44,16 +44,12 @@ def evaluate_model(model, X_train, X_test, y_train, y_test, data_logger):
         precision = precision_score(y_test_binary, binary_predictions, average="macro")
         recall = recall_score(y_test_binary, binary_predictions, average="macro")
         f1 = f1_score(y_test_binary, binary_predictions, average="macro")
-        mse = mean_squared_error(y_test, predictions)
-        mape = mean_absolute_percentage_error(y_test,predictions)
         rmse = root_mean_squared_error(y_test, predictions)
         r2 = r2_score(y_test, predictions)
 
     round_digits = 4
     results = [
         time_taken,
-        round(mse, round_digits),
-        round(mape, round_digits),
         round(rmse, round_digits),
         round(r2, round_digits),
         round(ham_acc, round_digits),

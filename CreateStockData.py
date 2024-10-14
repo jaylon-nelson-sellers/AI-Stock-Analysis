@@ -145,23 +145,8 @@ class CreateStockData:
 
 
 if __name__ == '__main__':
-    tickers = ['^DJI',
-'^IXIC',
+    tickers = [
 '^GSPC',
-'^RUT',
-'^TYX',
 'GC=F',
-'SI=F',
-'BTC-USD',
-'ETH-USD',
-'^SP500-40',
-'^SP500-25',
-'^SP500-60',
-'^SP500-30',
-'^GSPE',
-'^SP500-20',
-'^SP500-15',
-'^SP500-55',
-'^SP500-45',
-'^SP500-35']
+'BTC-USD',]
     St = CreateStockData(1, 10, tickers, add_technical_indicators=True)
