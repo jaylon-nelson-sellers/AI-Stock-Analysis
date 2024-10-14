@@ -1,2 +1,2 @@
-# AI Stock Analysis
- A study of various methods of stock analysis for trading
+# Money-Printer
+Stock Trading v2
