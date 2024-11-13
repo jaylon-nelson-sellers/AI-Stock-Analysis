@@ -22,7 +22,7 @@ class LoadStockDataset:
             print("Loading File")
         # need to change
         if normalize:
-            self.observed = 10
+            self.observed = 1
             self.feats = pd.read_csv("feats.csv")
             self.normalize()
             self.feats.to_csv("feats_n.csv", index=False)

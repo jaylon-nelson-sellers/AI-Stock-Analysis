@@ -101,7 +101,7 @@ class CreateStockData:
     def calculate_targets(self, close_prices: pd.Series, future_days: int) -> pd.DataFrame:
         regression_targets = pd.DataFrame(index=close_prices.index)
 
-        for day in range(1, future_days + 1):
+        for day in range(1, future_days + 1,5):
             future_close = close_prices.shift(-day)
 
             # Calculate the  change for the regression target
@@ -143,5 +143,19 @@ class CreateStockData:
 
 if __name__ == '__main__':
     num_stocks = 1
-    tickers = filter_companies("comps.csv", num_stocks)["Symbol"]
-    St = CreateStockData(10, 10, tickers, add_technical_indicators=False)
+    tickers = [
+    '^GSPC',
+    '^TYX',
+    'GC=F',
+    'BTC-USD',
+    '^SP500-40',
+    '^SP500-25',
+    '^SP500-60',
+    '^SP500-30',
+    '^GSPE',
+    '^SP500-20',
+    '^SP500-15',
+    '^SP500-55',
+    '^SP500-45',
+    '^SP500-35']
+    St = CreateStockData(1, 50, tickers, add_technical_indicators=True)

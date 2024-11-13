@@ -1,7 +1,7 @@
 import joblib
 import pandas as pd
 from sklearn.dummy import DummyRegressor
-from sklearn.ensemble import RandomForestRegressor, HistGradientBoostingClassifier, HistGradientBoostingRegressor, \
+from sklearn.ensemble import ExtraTreesRegressor, RandomForestRegressor, HistGradientBoostingClassifier, HistGradientBoostingRegressor, \
     AdaBoostRegressor, VotingRegressor
 from sklearn.linear_model import Ridge, LinearRegression, LogisticRegression
 from sklearn.multioutput import MultiOutputRegressor
@@ -84,6 +84,8 @@ def sklearn_tests(dataset_id,dataset):
     classifiers = [
         LinearRegression(),
         DecisionTreeRegressor(),
+        RandomForestRegressor(n_jobs=-1),
+        ExtraTreesRegressor(n_jobs=-1)
     ]
     # Evaluate each model using the training and test data
     best_score = -1
@@ -186,7 +188,7 @@ def create_nn_models(problem_type: str, output_size: int,num_layers=2,image_chec
         hiddens.append((neurons, neurons))
     dropout = 0
 
-    return [EasyNeuralNet(output_size,h,dropout,batch_norm=False,learning_rate=.001,image_bool=False,problem_type=1,verbose=True)
+    return [EasyNeuralNet(output_size,h,dropout,batch_norm=True,learning_rate=.001,image_bool=False,problem_type=1,verbose=True)
             for h in hiddens]
 
 
@@ -207,8 +209,8 @@ def lstm_tests(dataset_id, df,dims=2,stock_check=False):
 
     X_train, X_test, y_train = convert_data_to_tensors(X_train, X_test, y_train, image_bool=not stock_check)
     neuron_sizes = [2,4,8,16,32,64,128,256,512,1024]
-    layers = [1]
-    dropouts = []
+    layers = [2,3,4,5]
+    dropouts = [0.5]
     for l in layers:
         for n in neuron_sizes:
             for dropout in dropouts:
@@ -219,7 +221,7 @@ def lstm_tests(dataset_id, df,dims=2,stock_check=False):
 
 
 if __name__ == '__main__':
-    id = "Test 1"
+    id = "Test 2 batch"
     twod = False
     ld = LoadStockDataset(dataset_index=1,normalize=1)
 
@@ -228,7 +230,7 @@ if __name__ == '__main__':
         lstm_tests(id,dataset)
     else:
         dataset = ld.get_train_test_split()
-        dummy_tests(id,dataset)
+        #dummy_tests(id,dataset)
         sklearn_tests(id,dataset)
-        xgb_tests(id,dataset)
-        nn_tests(id,dataset)
+        #xgb_tests(id,dataset)
+        #nn_tests(id,dataset)
