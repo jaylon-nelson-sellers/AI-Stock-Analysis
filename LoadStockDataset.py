@@ -22,7 +22,7 @@ class LoadStockDataset:
             print("Loading File")
         # need to change
         if normalize:
-            self.observed = 1
+            self.observed = dataset_index
             self.feats = pd.read_csv("feats.csv")
             self.normalize()
             self.feats.to_csv("feats_n.csv", index=False)
@@ -31,8 +31,6 @@ class LoadStockDataset:
 
         if dataset_index == 1:
             self.observed = 1
-            self.feats = pd.read_csv("feats_n.csv")
-            self.targets = pd.read_csv("regress.csv")
         elif dataset_index == 10:
             self.observed = 10
         else:

@@ -2,10 +2,12 @@ import warnings
 import numpy as np
 import time
 import pandas as pd
+import sys
 from sklearn.metrics import (
-    accuracy_score, precision_score, recall_score, confusion_matrix, balanced_accuracy_score, root_mean_squared_error,
+    accuracy_score, mean_absolute_error, precision_score, recall_score, confusion_matrix, balanced_accuracy_score, root_mean_squared_error,
     mean_squared_error, mean_absolute_percentage_error, r2_score, f1_score, hamming_loss, explained_variance_score
 )
+from pympler import asizeof
 
 def evaluate_model(model, X_train, X_test, y_train, y_test, data_logger):
     """
@@ -41,15 +43,21 @@ def evaluate_model(model, X_train, X_test, y_train, y_test, data_logger):
         warnings.simplefilter("ignore")
         acc = accuracy_score(y_test_binary, binary_predictions)
         ham_acc = 1 - hamming_loss(y_test_binary, binary_predictions)
-        precision = precision_score(y_test_binary, binary_predictions, average="macro")
-        recall = recall_score(y_test_binary, binary_predictions, average="macro")
-        f1 = f1_score(y_test_binary, binary_predictions, average="macro")
+        precision = precision_score(y_test_binary, binary_predictions, average="weighted")
+        recall = recall_score(y_test_binary, binary_predictions, average="weighted")
+        f1 = f1_score(y_test_binary, binary_predictions, average="weighted")
+        mae = mean_absolute_error(y_test,predictions)
+        mse = mean_squared_error(y_test, predictions)
         rmse = root_mean_squared_error(y_test, predictions)
         r2 = r2_score(y_test, predictions)
 
+    size_in_bytes = asizeof.asizeof(model)
     round_digits = 4
     results = [
+        size_in_bytes,
         time_taken,
+        round(mae, round_digits),
+        round(mse, round_digits),
         round(rmse, round_digits),
         round(r2, round_digits),
         round(ham_acc, round_digits),

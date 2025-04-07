@@ -25,7 +25,7 @@ class RecurrentNet(nn.Module):
         super(RecurrentNet, self).__init__()
         self.hidden_size = hidden_size
         self.num_layers = num_layers
-
+        self.dropout_prob = dropout_prob
         self.rnn = nn.RNN(input_size, hidden_size, num_layers, batch_first=True, nonlinearity='relu',
                           dropout=dropout_prob)
         self.fc = nn.Linear(hidden_size, output_size)
@@ -48,7 +48,7 @@ class EasyRecNet:
     A class to simplify recurrent neural network creation and training using Torch.
     """
 
-    def __init__(self, input_size: int, output_size: int, hidden_size: int, num_layers: int, dropout_prob: float = 0.0,
+    def __init__(self, input_size: int, output_size: int, hidden_size: int, num_layers: int, dropout: float = 0.0,
                  criterion: str = "MSELoss", problem_type: int = 0, batch_size: int = 64, learning_rate: float = 0.001,
                  max_iter: int = 10000, early_stopping: bool = True, verbose: bool = False,
                  num_splits: int = 10,
@@ -71,7 +71,7 @@ class EasyRecNet:
         :param num_splits (int, optional): K-Fold Split of the data. Defaults to 10
         :param log: Whether to log training progress.
         """
-        self.model = RecurrentNet(input_size, output_size, hidden_size, num_layers, dropout_prob)
+        self.model = RecurrentNet(input_size, output_size, hidden_size, num_layers, dropout)
         self.network = create_torch_model(self.model, problem_type, criterion, batch_size, learning_rate, max_iter,
                                           early_stopping, verbose, num_splits, log)
         self.log = log
