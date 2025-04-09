@@ -22,8 +22,8 @@ import xgboost as xgb
 from sklearn.pipeline import Pipeline
 from sklearn.ensemble import StackingRegressor
 
-#increments = [8,16,32,64,128,256,512,1024]
-increments = [1024,2048,2048*2, 2048*4, 2048*8 ]
+increments = [8,16,32,64,128,256,512]
+#increments = [512,1024,2048,2048*2, 2048*4, 2048*8 ]
 
 def convert_data_to_tensors(X_train, X_test, y_train,image_bool=False):
     """ Convert numpy arrays to PyTorch tensors.
@@ -174,13 +174,14 @@ def nn_tests(dataset_id, dataset):
     dropout = 0
     for i in increments:
         neurons = i
-        h = (neurons, int(neurons * 1/2),)
-        model = EasyNeuralNet(y_train.shape[1],h,dropout,batch_norm=True,learning_rate=.001,image_bool=False,problem_type=1,verbose=True)
-        print(evaluate_model(model, X_train, X_test, y_train, y_test, data_logger))
-        h = (neurons, int(neurons * 1/2),int(neurons * 1/2 ** 2))
+
+        h = (neurons, int(neurons * 1/2),int(neurons * 1/2 ** 2),int(neurons * 1/2 ** 3), int(neurons * 1/2 ** 4))
         model = EasyNeuralNet(y_train.shape[1],h,dropout,batch_norm=True,learning_rate=.0001,image_bool=False,problem_type=1,verbose=True)
         print(evaluate_model(model, X_train, X_test, y_train, y_test, data_logger))
-        h = (neurons, int(neurons * 1/2),int(neurons * 1/2 ** 2),int(neurons * 1/2 ** 3))
+        h = (neurons, int(neurons * 1/2),int(neurons * 1/2 ** 2),int(neurons * 1/2 ** 3), int(neurons * 1/2 ** 4),int(neurons * 1/2 ** 5),  )
+        model = EasyNeuralNet(y_train.shape[1],h,dropout,batch_norm=True,learning_rate=.0001,image_bool=False,problem_type=1,verbose=True)
+        print(evaluate_model(model, X_train, X_test, y_train, y_test, data_logger))
+        h = (neurons, int(neurons * 1/2),int(neurons * 1/2 ** 2),int(neurons * 1/2 ** 3), int(neurons * 1/2 ** 4),int(neurons * 1/2 ** 5), int(neurons * 1/2 ** 6))
         model = EasyNeuralNet(y_train.shape[1],h,dropout,batch_norm=True,learning_rate=.0001,image_bool=False,problem_type=1,verbose=True)
         print(evaluate_model(model, X_train, X_test, y_train, y_test, data_logger))
 
@@ -320,7 +321,7 @@ if __name__ == '__main__':
     #cnn nerf -5
     #cnn IGTD 6
     #bagging 7
-    conds = [2,-3,-4,-5,6]
+    conds = [-3,-4]
     #conds = [1]
     for cond in conds:
         if cond == 0:
