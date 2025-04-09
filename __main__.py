@@ -12,6 +12,7 @@ from sklearn.tree import DecisionTreeRegressor
 import torch
 import numpy as np
 from DataLogger import DataLogger
+from EasyTorch.EasyConvNet import EasyConvNet
 from EasyTorch.EasyRecNet import EasyRecNet
 from EasyTorch.EasyLSTM import EasyLSTM
 from EasyTorch.EasyNeuralNet import EasyNeuralNet
@@ -19,6 +20,10 @@ from Evaluate import evaluate_model
 from LoadStockDataset import LoadStockDataset
 import xgboost as xgb
 from sklearn.pipeline import Pipeline
+from sklearn.ensemble import StackingRegressor
+
+#increments = [8,16,32,64,128,256,512,1024]
+increments = [1024,2048,2048*2, 2048*4, 2048*8 ]
 
 def convert_data_to_tensors(X_train, X_test, y_train,image_bool=False):
     """ Convert numpy arrays to PyTorch tensors.
@@ -65,7 +70,7 @@ def dummy_tests(dataset_id,dataset):
     X_train, X_test, y_train, y_test = dataset
     # Initialize the data logger to record dataset details
     data_logger = DataLogger(dataset_id,X_train.shape, len(X_train.shape),  X_train.shape[0],
-    X_train.shape[1])
+    X_train.shape[1], num_outputs=y_train.shape[1])
 
     # Get dummy classifiers or regressors based on the problem type
     classifiers = DummyRegressor()
@@ -80,17 +85,18 @@ def sklearn_tests(dataset_id,dataset):
     X_train, X_test, y_train, y_test = dataset
 
     data_logger = DataLogger(dataset_id,X_train.shape, len(X_train.shape), X_train.shape[0],
-                             X_train.shape[1])
-
+                             X_train.shape[1],num_outputs=y_train.shape[1])
 
     # Get sklearn classifiers or regressors based on the problem type
     classifiers = [
         LinearRegression(),
         DecisionTreeRegressor(),
-        RandomForestRegressor(n_jobs=-1, n_estimators=200),
-        ExtraTreesRegressor(n_jobs=-1,n_estimators=200),
-
     ]
+    for i in increments:
+        classifiers.append(RandomForestRegressor(n_jobs=-1,n_estimators=i),
+        )
+        classifiers.append(ExtraTreesRegressor(n_jobs=-1,n_estimators=i),
+        )
     # Evaluate each model using the training and test data
     best_score = -1
     best_model = None
@@ -112,16 +118,17 @@ def xgb_tests(dataset_id,dataset):
     X_train, X_test, y_train, y_test = dataset
 
     data_logger = DataLogger(dataset_id,X_train.shape, len(X_train.shape), X_train.shape[0],
-                             X_train.shape[1])
+                             X_train.shape[1],num_outputs=y_train.shape[1])
 
 
     # Evaluate each model using the training and test data
     best_score = -1
     best_model = None
-    nums = [2,4,8,16,32,64,128,256,512,1024]
-    for n in nums:
+
+    depths = []
+    for i in increments:
         model = xgb.XGBRegressor(
-                n_estimators=n,
+                n_estimators=i,
                 learning_rate=0.1,
                 device='cuda',  # Use GPU acceleratio
                 n_jobs=-1,
@@ -152,55 +159,37 @@ def nn_tests(dataset_id, dataset):
         num_unique_values = 1
 
     data_logger = DataLogger(dataset_id, X_train.shape, len(X_train.shape), X_train.shape[0],
-                             X_train.shape[1])
+                             X_train.shape[1],num_outputs=y_train.shape[1])
 
     # Convert data to tensors for neural network compatibility
     X_train, X_test, y_train = convert_data_to_tensors(X_train, X_test, y_train,image_bool=not True)
     # Generate neural network models based on the problem type and output size
 
-    #change this to represent y
 
-
-    models = create_nn_models(problem_type=y_train.shape[1],output_size=y_train.shape[1],stock_check=True)
-
-    # Evaluate each model using the prepared data
+    iters = 13
+    nn = 2
 
     best_score = -1
     best_model = None
-    for model in models:
-        score = evaluate_model(model, X_train, X_test, y_train, y_test, data_logger)
-        if score > best_score:
-            best_score = score
-            best_model = model
+    dropout = 0
+    for i in increments:
+        neurons = i
+        h = (neurons, int(neurons * 1/2),)
+        model = EasyNeuralNet(y_train.shape[1],h,dropout,batch_norm=True,learning_rate=.001,image_bool=False,problem_type=1,verbose=True)
+        print(evaluate_model(model, X_train, X_test, y_train, y_test, data_logger))
+        h = (neurons, int(neurons * 1/2),int(neurons * 1/2 ** 2))
+        model = EasyNeuralNet(y_train.shape[1],h,dropout,batch_norm=True,learning_rate=.0001,image_bool=False,problem_type=1,verbose=True)
+        print(evaluate_model(model, X_train, X_test, y_train, y_test, data_logger))
+        h = (neurons, int(neurons * 1/2),int(neurons * 1/2 ** 2),int(neurons * 1/2 ** 3))
+        model = EasyNeuralNet(y_train.shape[1],h,dropout,batch_norm=True,learning_rate=.0001,image_bool=False,problem_type=1,verbose=True)
+        print(evaluate_model(model, X_train, X_test, y_train, y_test, data_logger))
+
+
 
     joblib.dump(best_model, 'best_NN_model.joblib')
-def create_nn_models(problem_type: str, output_size: int,num_layers=2,image_check=False,stock_check=False):
-    """ Generate neural network models with varying hidden layer configurations.
 
-    Args:
-        problem_type (str): Indicates the type of problem (classification or regression).
-        output_size (int): The size of the output layer, typically the number of classes or regression outputs.
 
-    Returns:
-        list: A list of neural network models with different hidden layer sizes for testing.
-    """
-    # Define a range of hidden layer sizes
-
-    hiddens = []
-    iters = 15
-    nn = 2
-    for i in range(3,iters):
-        neurons = nn * (2 ** i)
-        #hiddens.append((neurons, neurons))
-        hiddens.append((neurons, neurons,neurons))
-        #hiddens.append((neurons, neurons,neurons,neurons))
-        #hiddens.append((neurons, int(neurons * 2/3),int(neurons * 2/3 ** 2),int(neurons * 2/3 ** 3)))
-        #hiddens.append((neurons, neurons,neurons,neurons,neurons))
-    dropout = 0
-
-    return [EasyNeuralNet(output_size,h,dropout,batch_norm=True,learning_rate=.0001,image_bool=False,problem_type=1,verbose=True)
-            for h in hiddens]
-
+    
 
 def reccurent_tests(dataset_id, df,dims=2,stock_check=False):
     X_train, X_test, y_train, y_test = df
@@ -210,19 +199,19 @@ def reccurent_tests(dataset_id, df,dims=2,stock_check=False):
 
     if dims == 1:
         data_logger = DataLogger(dataset_id,  X_train.shape, len(X_train.shape), X_train.shape[0],
-                                 X_train.shape[1:])
+                                 X_train.shape[1:],num_outputs=y_train.shape[1])
         inputs = X_train.shape[2]
     if dims == 2:
         data_logger = DataLogger(dataset_id,X_train.shape, len(X_train.shape), X_train.shape[0],
-                                 X_train.shape[1:])
+                                 X_train.shape[1:],num_outputs=y_train.shape[1])
         inputs = X_train.shape[2]
 
     X_train, X_test, y_train = convert_data_to_tensors(X_train, X_test, y_train, image_bool=not stock_check)
-    neuron_sizes = [16,32,64,128,256,512,1024,2048,2048*2, 2048*4]
-    layers = [1,2,3,4,5]
-    dropouts = [0, 0.5]
+
+    layers = [2,3,4,5,6]
+    dropouts = [0]
     for l in layers:
-        for n in neuron_sizes:
+        for n in increments:
             for dropout in dropouts:
 
                 model = EasyRecNet(X_train.shape[2], y_train.shape[1], n, l, dropout=dropout,criterion="HuberLoss", problem_type=1,
@@ -239,38 +228,139 @@ def lstm_tests(dataset_id, df,dims=2,stock_check=False):
 
     if dims == 1:
         data_logger = DataLogger(dataset_id,  X_train.shape, len(X_train.shape), X_train.shape[0],
-                                 X_train.shape[1:])
+                                 X_train.shape[1:],num_outputs=y_train.shape[1])
         inputs = X_train.shape[2]
     if dims == 2:
         data_logger = DataLogger(dataset_id,X_train.shape, len(X_train.shape), X_train.shape[0],
-                                 X_train.shape[1:])
+                                 X_train.shape[1:],num_outputs=y_train.shape[1])
         inputs = X_train.shape[2]
 
     X_train, X_test, y_train = convert_data_to_tensors(X_train, X_test, y_train, image_bool=not stock_check)
-    neuron_sizes = [16,32,64,128,256,512,1024,2048,2048*2, 2048*4]
-    layers = [2,3,4,5]
-    dropouts = [0, 0.5]
+    
+    layers = [2,3,4,5,6]
+    dropouts = [0]
     for l in layers:
-        for n in neuron_sizes:
+        for n in increments:
             for dropout in dropouts:
 
                 model = EasyLSTM(X_train.shape[2], y_train.shape[1], n, l, dropout,criterion_str="HuberLoss", problem_type=1,
                                         verbose=True)
                 evaluate_model(model, X_train, X_test, y_train, y_test, data_logger)
 
+def cnn_tests(dataset_id, df,dims=2,stock_check=True):
+    """ Test convolutional neural network (CNN) models with 3D data from a specified dataset.
+
+    Args:
+        dataset (int): Dataset identifier.
+        num_outputs (int): Indicates the number of outputs for the model (classification or regression).
+        dim3d (int): Specifies if the data is 3-dimensional.
+    """
+    #Temp, need to refactor
+    problem_type = "regression"
+    X_train, X_test, y_train, y_test = df
+    outputs = y_train.shape[1]
+    print(outputs)
+
+    unique_values = np.unique(y_train)
+    num_unique_values = len(unique_values)
+    if num_unique_values == 2:
+        num_unique_values = 1
+    if dims == 1:
+        data_logger = DataLogger(dataset_id, X_train.shape, len(X_train.shape), X_train.shape[0],
+                                 X_train.shape[1:],num_outputs=outputs)
+        inputs = X_train.shape[2]
+    if dims == 2:
+        data_logger = DataLogger(dataset_id, X_train.shape, len(X_train.shape), X_train.shape[0],
+                                 X_train.shape[1:],num_outputs=outputs)
+        inputs = X_train.shape[2]
+
+    X_train, X_test, y_train = convert_data_to_tensors(X_train, X_test, y_train, image_bool=not stock_check)
+    # Generate neural network models based on the problem type and output size
+
+    bin_prob_type = 1
+    # Generate neural network models based on the problem type and output size
+
+    hid = 2
+    conv_per_blocks = [1,2,3]
+    pool_blocks= [1,2,3]
+ 
+
+    for pool in pool_blocks:
+        for conv in conv_per_blocks:
+            for chan in increments:
+                if problem_type == "regression":
+                    model = EasyConvNet(inputs, outputs, criterion_str= "HuberLoss", dimensions=dims,
+                                        num_channels=chan, conv_layers_per_block=conv,
+                                        pool_blocks=pool, dense_layers=hid,problem_type=1, verbose=True)
+                    evaluate_model(model, X_train, X_test, y_train, y_test, data_logger)
+                elif stock_check:
+                    model = EasyConvNet(inputs, outputs, criterion_str="BCEWithLogitsLoss", dimensions=dims,
+                                        num_channels=chan, conv_layers_per_block=conv,
+                                        pool_blocks=pool, dense_layers=hid, verbose=True)
+                    evaluate_model(model, X_train, X_test, y_train, y_test, data_logger)
+                else:
+                    model = EasyConvNet(inputs, outputs, criterion_str="CrossEntropyLoss", dimensions=dims,
+                                        num_channels=chan, conv_layers_per_block=conv,
+                                        pool_blocks=pool, dense_layers=hid, verbose=True)
+
+                    evaluate_model(model, X_train, X_test, y_train, y_test, data_logger)
 
 if __name__ == '__main__':
-    id = "Test 1: Gold'Scikit "
-    twod = True
+    id = "Test 1:1O,5P,TECH"
     ld = LoadStockDataset(dataset_index=1,normalize=1)
-
-    if twod:
-        dataset = ld.get_3d(version=1)
-        reccurent_tests(id,dataset)
-        lstm_tests(id,dataset)
-    else:
-        dataset = ld.get_train_test_split()
-        #dummy_tests(id,dataset)
-        #sklearn_tests(id,dataset)
-        #xgb_tests(id,dataset)
-        nn_tests(id,dataset)
+    days_obs = 5
+    #sk 0
+    #xbg 1
+    #nn 2
+    #rnn 3
+    #rnn nerf -3
+    #lstm 4
+    #lstm nerf -4
+    #cnn 5
+    #cnn nerf -5
+    #cnn IGTD 6
+    #bagging 7
+    conds = [2,-3,-4,-5,6]
+    #conds = [1]
+    for cond in conds:
+        if cond == 0:
+            ld = LoadStockDataset(dataset_index=1,normalize=1)
+            dataset = ld.get_train_test_split()
+            dummy_tests(id,dataset)
+            sklearn_tests(id,dataset)
+        if cond == 1:
+            ld = LoadStockDataset(dataset_index=1,normalize=1)
+            dataset = ld.get_train_test_split()
+            xgb_tests(id,dataset)
+        if cond == 2:
+            ld = LoadStockDataset(dataset_index=1,normalize=1)
+            dataset = ld.get_train_test_split()
+            nn_tests(id,dataset)
+        if cond == -3:
+            ld = LoadStockDataset(dataset_index=1,normalize=1)
+            dataset = ld.get_3d(version=0)
+            reccurent_tests(id,dataset)
+        if cond == 3:
+            ld = LoadStockDataset(dataset_index=days_obs,normalize=1)
+            dataset = ld.get_3d(version=1)
+            reccurent_tests(id,dataset)
+        if cond == 4:
+            ld = LoadStockDataset(dataset_index=days_obs,normalize=1)
+            dataset = ld.get_3d(version=1)        
+            lstm_tests(id,dataset)
+        if cond == -4:
+            ld = LoadStockDataset(dataset_index=1,normalize=1)
+            dataset = ld.get_3d(version=0)        
+            lstm_tests(id,dataset)
+        if cond == -5:
+            ld = LoadStockDataset(dataset_index=1,normalize=1)
+            dataset = ld.get_3d(version=0)
+            cnn_tests(id,dataset,dims=1)
+        if cond == 5:
+            ld = LoadStockDataset(dataset_index=days_obs,normalize=1)
+            dataset = ld.get_3d(version=1)
+            cnn_tests(id,dataset,dims=1)
+        if cond == 6:
+            ld = LoadStockDataset(dataset_index=days_obs,normalize=1)
+            dataset = ld.get_3d(version=2)
+            cnn_tests(id,dataset,dims=2)
