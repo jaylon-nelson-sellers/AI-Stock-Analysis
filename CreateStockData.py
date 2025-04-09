@@ -144,6 +144,6 @@ class CreateStockData:
 if __name__ == '__main__':
     num_stocks = 1
     tickers = [
-    'GC=F'
+    '^GSPC',
     ]
-    St = CreateStockData(1, 2, tickers, add_technical_indicators=True)
+    St = CreateStockData(1, 5, tickers, add_technical_indicators=True)

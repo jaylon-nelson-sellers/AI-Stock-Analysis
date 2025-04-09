@@ -1,4 +1,6 @@
+import math
 import os
+import pickle
 
 import numpy as np
 import pandas as pd
@@ -6,6 +8,8 @@ from sklearn.cluster import KMeans, AgglomerativeClustering, DBSCAN, HDBSCAN, OP
 from sklearn.decomposition import FastICA, PCA, KernelPCA
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import MinMaxScaler, QuantileTransformer, RobustScaler, StandardScaler
+
+from IGTD import min_max_transform, select_features_by_variation, table_to_image
 
 
 class LoadStockDataset:
@@ -86,10 +90,20 @@ class LoadStockDataset:
             feats_3d = np.concatenate((feats_3d, random_array), axis=2)
         return feats_3d
 
+    def getIGTD(self):
+        with open("IGTD\Results.pkl", 'rb') as picklefile:
+            feats = pickle.load(picklefile)
+            data_condition2 = np.transpose(feats, (2, 0, 1))[:, np.newaxis, :, :]
+            print("Shape of feats:", data_condition2.shape)
+            self.feats = data_condition2
+            print(self.feats.shape)
+            
     def IGTD(self):
-        num_columns = self.feats.shape[1]
+        print(math.sqrt(self.feats.shape[1]))
+        num_columns = int(math.sqrt(self.feats.shape[1]))
         if not self.is_power_of_two(num_columns):
             next_pow2 = self.next_smallest_power_of_two(num_columns)
+        print(next_pow2)
         num_row = next_pow2  # Number of pixel rows in image representation
         num_col = next_pow2  # Number of pixel columns in image representation
         num = num_row * num_col  # Number of features to be included for analysis, which is also the total number of pixels in image representation
@@ -165,6 +179,8 @@ class LoadStockDataset:
         if version == 2:
             # need to finish this part
             self.IGTD()
+            self.getIGTD()
+            return train_test_split(self.feats, self.targets, test_size=split, random_state=1)
 
     from sklearn.preprocessing import StandardScaler
 

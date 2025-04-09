@@ -4,7 +4,7 @@ from typing import Any, List
 
 class DataLogger:
     def __init__(self, dataset_id: str, shape: tuple, dimension: int, num_samples: int,
-                 num_features: int):
+                 num_features: int, num_outputs:int =0):
         """
         Initializes the DataLogger with information about the dataset.
 
@@ -16,7 +16,7 @@ class DataLogger:
             num_features (int): The number of features for each sample in the dataset.
             num_observed (int): The number of observed variables in the dataset.
         """
-        self.attributes = [dataset_id, dimension, shape, num_samples, num_features]
+        self.attributes = [dataset_id, dimension, shape, num_samples, num_features, num_outputs]
 
     def save_info(self, model: Any, metrics_indices, results: List[Any], log: bool = False) -> None:
         """

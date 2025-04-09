@@ -37,7 +37,7 @@ def evaluate_model(model, X_train, X_test, y_train, y_test, data_logger):
         balanced_accuracies += balanced_acc
 
     # Calculate mean balanced accuracy
-    mean_balanced_accuracy = balanced_accuracies / y_test_binary.shape[1]
+    mba = balanced_accuracies / y_test_binary.shape[1]
 
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
@@ -47,26 +47,23 @@ def evaluate_model(model, X_train, X_test, y_train, y_test, data_logger):
         recall = recall_score(y_test_binary, binary_predictions, average="weighted")
         f1 = f1_score(y_test_binary, binary_predictions, average="weighted")
         mae = mean_absolute_error(y_test,predictions)
-        mse = mean_squared_error(y_test, predictions)
         rmse = root_mean_squared_error(y_test, predictions)
         r2 = r2_score(y_test, predictions)
 
-    size_in_bytes = asizeof.asizeof(model)
     round_digits = 4
     results = [
-        size_in_bytes,
+        
         time_taken,
         round(mae, round_digits),
-        round(mse, round_digits),
         round(rmse, round_digits),
         round(r2, round_digits),
-        round(ham_acc, round_digits),
-        round(mean_balanced_accuracy, round_digits),
         round(acc, round_digits),
+        round(mba, round_digits),
+        round(ham_acc, round_digits),
         round(precision, round_digits),
         round(recall, round_digits),
         round(f1, round_digits)
     ] 
 
     data_logger.save_info(model, "Full", results)
-    return mean_balanced_accuracy
+    return acc
