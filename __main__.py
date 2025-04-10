@@ -1,9 +1,9 @@
 import joblib
 import pandas as pd
 from sklearn.dummy import DummyRegressor
-from sklearn.ensemble import ExtraTreesRegressor, RandomForestRegressor, HistGradientBoostingClassifier, HistGradientBoostingRegressor, \
+from sklearn.ensemble import BaggingRegressor, ExtraTreesRegressor, RandomForestRegressor, HistGradientBoostingClassifier, HistGradientBoostingRegressor, \
     AdaBoostRegressor, VotingRegressor
-from sklearn.linear_model import Ridge, LinearRegression, LogisticRegression
+from sklearn.linear_model import Lasso, Ridge, LinearRegression, LogisticRegression
 from sklearn.multioutput import MultiOutputRegressor
 from sklearn.neighbors import KNeighborsRegressor
 from sklearn.neural_network import BernoulliRBM
@@ -22,7 +22,7 @@ import xgboost as xgb
 from sklearn.pipeline import Pipeline
 from sklearn.ensemble import StackingRegressor
 
-increments = [8,16,32,64,128,256,512]
+increments = [2,4,8,16,32,64,128,256,512,1024,2048]
 #increments = [512,1024,2048,2048*2, 2048*4, 2048*8 ]
 
 def convert_data_to_tensors(X_train, X_test, y_train,image_bool=False):
@@ -91,12 +91,16 @@ def sklearn_tests(dataset_id,dataset):
     classifiers = [
         LinearRegression(),
         DecisionTreeRegressor(),
+        KNeighborsRegressor(),
     ]
-    for i in increments:
+    nums = [2,4,8,16,32,64,128,256,512]
+
+    for i in nums:
         classifiers.append(RandomForestRegressor(n_jobs=-1,n_estimators=i),
         )
         classifiers.append(ExtraTreesRegressor(n_jobs=-1,n_estimators=i),
         )
+        
     # Evaluate each model using the training and test data
     best_score = -1
     best_model = None
@@ -175,18 +179,21 @@ def nn_tests(dataset_id, dataset):
     for i in increments:
         neurons = i
 
-        h = (neurons, int(neurons * 1/2),int(neurons * 1/2 ** 2),int(neurons * 1/2 ** 3), int(neurons * 1/2 ** 4))
-        model = EasyNeuralNet(y_train.shape[1],h,dropout,batch_norm=True,learning_rate=.0001,image_bool=False,problem_type=1,verbose=True)
+        h = (neurons, neurons)
+        model = EasyNeuralNet(y_train.shape[1],h,dropout,batch_norm=True,learning_rate=.001,image_bool=False,problem_type=1,verbose=True)
         print(evaluate_model(model, X_train, X_test, y_train, y_test, data_logger))
-        h = (neurons, int(neurons * 1/2),int(neurons * 1/2 ** 2),int(neurons * 1/2 ** 3), int(neurons * 1/2 ** 4),int(neurons * 1/2 ** 5),  )
-        model = EasyNeuralNet(y_train.shape[1],h,dropout,batch_norm=True,learning_rate=.0001,image_bool=False,problem_type=1,verbose=True)
-        print(evaluate_model(model, X_train, X_test, y_train, y_test, data_logger))
-        h = (neurons, int(neurons * 1/2),int(neurons * 1/2 ** 2),int(neurons * 1/2 ** 3), int(neurons * 1/2 ** 4),int(neurons * 1/2 ** 5), int(neurons * 1/2 ** 6))
-        model = EasyNeuralNet(y_train.shape[1],h,dropout,batch_norm=True,learning_rate=.0001,image_bool=False,problem_type=1,verbose=True)
+       
+        h = (neurons, neurons, neurons)
+        model = EasyNeuralNet(y_train.shape[1],h,dropout,batch_norm=True,learning_rate=.001,image_bool=False,problem_type=1,verbose=True)
         print(evaluate_model(model, X_train, X_test, y_train, y_test, data_logger))
 
+        h = (neurons, neurons,neurons,neurons,neurons)
+        model = EasyNeuralNet(y_train.shape[1],h,dropout,batch_norm=True,learning_rate=.001,image_bool=False,problem_type=1,verbose=True)
+        print(evaluate_model(model, X_train, X_test, y_train, y_test, data_logger))
 
-
+        h = (neurons, neurons,neurons,neurons,neurons,neurons, neurons,neurons,neurons,neurons)
+        model = EasyNeuralNet(y_train.shape[1],h,dropout,batch_norm=True,learning_rate=.001,image_bool=False,problem_type=1,verbose=True)
+        print(evaluate_model(model, X_train, X_test, y_train, y_test, data_logger))
     joblib.dump(best_model, 'best_NN_model.joblib')
 
 
@@ -209,7 +216,7 @@ def reccurent_tests(dataset_id, df,dims=2,stock_check=False):
 
     X_train, X_test, y_train = convert_data_to_tensors(X_train, X_test, y_train, image_bool=not stock_check)
 
-    layers = [2,3,4,5,6]
+    layers = [2,3,4,5]
     dropouts = [0]
     for l in layers:
         for n in increments:
@@ -238,7 +245,7 @@ def lstm_tests(dataset_id, df,dims=2,stock_check=False):
 
     X_train, X_test, y_train = convert_data_to_tensors(X_train, X_test, y_train, image_bool=not stock_check)
     
-    layers = [2,3,4,5,6]
+    layers = [2,3,4,5]
     dropouts = [0]
     for l in layers:
         for n in increments:
@@ -284,11 +291,11 @@ def cnn_tests(dataset_id, df,dims=2,stock_check=True):
     hid = 2
     conv_per_blocks = [1,2,3]
     pool_blocks= [1,2,3]
- 
+    channels = [2,4,8,16,32,64,128]
 
     for pool in pool_blocks:
         for conv in conv_per_blocks:
-            for chan in increments:
+            for chan in channels:
                 if problem_type == "regression":
                     model = EasyConvNet(inputs, outputs, criterion_str= "HuberLoss", dimensions=dims,
                                         num_channels=chan, conv_layers_per_block=conv,
@@ -306,10 +313,45 @@ def cnn_tests(dataset_id, df,dims=2,stock_check=True):
 
                     evaluate_model(model, X_train, X_test, y_train, y_test, data_logger)
 
+
+def ensamble_tests(dataset_id,dataset):
+
+    # Load the dataset and split into training and testing sets
+
+    X_train, X_test, y_train, y_test = dataset
+
+    data_logger = DataLogger(dataset_id,X_train.shape, len(X_train.shape), X_train.shape[0],
+                             X_train.shape[1],num_outputs=y_train.shape[1])
+
+    # Get sklearn classifiers or regressors based on the problem type
+    regressors = [
+        LinearRegression(),
+        DecisionTreeRegressor(),
+        KNeighborsRegressor(),
+        BaggingRegressor(),
+        AdaBoostRegressor()
+    ]
+
+
+#    for i in increments:
+ #       classifiers.append((MultiOutputRegressor(BaggingRegressor(estimator=, n_estimators=i, max_samples=1/i, max_features=1/i)),))
+
+        
+    # Evaluate each model using the training and test data
+    best_score = -1
+    best_model = None
+    for model in classifiers:
+        score = evaluate_model(model, X_train, X_test, y_train, y_test, data_logger)
+        print(f"Model Complete:{model}")
+        if score > best_score:
+            best_score = score
+            best_model = model
+
+    joblib.dump(best_model, 'best_model.joblib')
+
 if __name__ == '__main__':
-    id = "Test 1:1O,5P,TECH"
-    ld = LoadStockDataset(dataset_index=1,normalize=1)
-    days_obs = 5
+    id = "Test 3"
+    
     #sk 0
     #xbg 1
     #nn 2
@@ -321,7 +363,8 @@ if __name__ == '__main__':
     #cnn nerf -5
     #cnn IGTD 6
     #bagging 7
-    conds = [-3,-4]
+    conds = [5,6]
+    days_obs = 5
     #conds = [1]
     for cond in conds:
         if cond == 0:

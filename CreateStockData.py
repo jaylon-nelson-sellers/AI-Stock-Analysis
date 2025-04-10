@@ -146,4 +146,4 @@ if __name__ == '__main__':
     tickers = [
     '^GSPC',
     ]
-    St = CreateStockData(1, 5, tickers, add_technical_indicators=True)
+    St = CreateStockData(5, 10, tickers, add_technical_indicators=True)
