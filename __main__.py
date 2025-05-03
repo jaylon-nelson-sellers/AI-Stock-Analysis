@@ -22,8 +22,9 @@ import xgboost as xgb
 from sklearn.pipeline import Pipeline
 from sklearn.ensemble import StackingRegressor
 
-increments = [2,4,8,16,32,64,128,256,512,1024,2048]
-#increments = [512,1024,2048,2048*2, 2048*4, 2048*8 ]
+#increments = [2,3,4,6,8,12,16,24,32,48,64,96,128,192,256,384,512,768,1024,1536,2048,3072, 4096]
+increments = [128,256,512,1024]
+
 
 def convert_data_to_tensors(X_train, X_test, y_train,image_bool=False):
     """ Convert numpy arrays to PyTorch tensors.
@@ -93,7 +94,7 @@ def sklearn_tests(dataset_id,dataset):
         DecisionTreeRegressor(),
         KNeighborsRegressor(),
     ]
-    nums = [2,4,8,16,32,64,128,256,512]
+    nums = [2,4,8,16,32,64,128]
 
     for i in nums:
         classifiers.append(RandomForestRegressor(n_jobs=-1,n_estimators=i),
@@ -120,7 +121,7 @@ def xgb_tests(dataset_id,dataset):
     # Load the dataset and split into training and testing sets
 
     X_train, X_test, y_train, y_test = dataset
-
+    X_train, X_test, y_train = convert_data_to_tensors(X_train, X_test, y_train,image_bool=not True)
     data_logger = DataLogger(dataset_id,X_train.shape, len(X_train.shape), X_train.shape[0],
                              X_train.shape[1],num_outputs=y_train.shape[1])
 
@@ -170,30 +171,27 @@ def nn_tests(dataset_id, dataset):
     # Generate neural network models based on the problem type and output size
 
 
-    iters = 13
-    nn = 2
-
     best_score = -1
     best_model = None
-    dropout = 0
+    dropout = [0]
+    lr = 0.0001
     for i in increments:
-        neurons = i
+        for d in dropout:
+            neurons = i
+            
+            h = (neurons, neurons)
+            model = EasyNeuralNet(y_train.shape[1],h,d,learning_rate=lr,batch_norm=True,image_bool=False,problem_type=1,verbose=True)
+            print(evaluate_model(model, X_train, X_test, y_train, y_test, data_logger))
 
-        h = (neurons, neurons)
-        model = EasyNeuralNet(y_train.shape[1],h,dropout,batch_norm=True,learning_rate=.001,image_bool=False,problem_type=1,verbose=True)
-        print(evaluate_model(model, X_train, X_test, y_train, y_test, data_logger))
-       
-        h = (neurons, neurons, neurons)
-        model = EasyNeuralNet(y_train.shape[1],h,dropout,batch_norm=True,learning_rate=.001,image_bool=False,problem_type=1,verbose=True)
-        print(evaluate_model(model, X_train, X_test, y_train, y_test, data_logger))
+            h = (neurons, neurons, neurons)
+            model = EasyNeuralNet(y_train.shape[1],h,d,learning_rate=lr,batch_norm=True,image_bool=False,problem_type=1,verbose=True)
+            print(evaluate_model(model, X_train, X_test, y_train, y_test, data_logger))
 
-        h = (neurons, neurons,neurons,neurons,neurons)
-        model = EasyNeuralNet(y_train.shape[1],h,dropout,batch_norm=True,learning_rate=.001,image_bool=False,problem_type=1,verbose=True)
-        print(evaluate_model(model, X_train, X_test, y_train, y_test, data_logger))
+            h = (neurons, neurons, neurons, neurons)
+            model = EasyNeuralNet(y_train.shape[1],h,d,learning_rate=lr,batch_norm=True,image_bool=False,problem_type=1,verbose=True)
+            print(evaluate_model(model, X_train, X_test, y_train, y_test, data_logger))
 
-        h = (neurons, neurons,neurons,neurons,neurons,neurons, neurons,neurons,neurons,neurons)
-        model = EasyNeuralNet(y_train.shape[1],h,dropout,batch_norm=True,learning_rate=.001,image_bool=False,problem_type=1,verbose=True)
-        print(evaluate_model(model, X_train, X_test, y_train, y_test, data_logger))
+
     joblib.dump(best_model, 'best_NN_model.joblib')
 
 
@@ -216,13 +214,13 @@ def reccurent_tests(dataset_id, df,dims=2,stock_check=False):
 
     X_train, X_test, y_train = convert_data_to_tensors(X_train, X_test, y_train, image_bool=not stock_check)
 
-    layers = [2,3,4,5]
+    layers = [2,3,4]
     dropouts = [0]
     for l in layers:
         for n in increments:
             for dropout in dropouts:
 
-                model = EasyRecNet(X_train.shape[2], y_train.shape[1], n, l, dropout=dropout,criterion="HuberLoss", problem_type=1,
+                model = EasyRecNet(X_train.shape[2], y_train.shape[1], n, l, dropout=dropout,criterion="HuberLoss",learning_rate=0.001, problem_type=1,
                                         verbose=True)
                 evaluate_model(model, X_train, X_test, y_train, y_test, data_logger)
 
@@ -245,13 +243,13 @@ def lstm_tests(dataset_id, df,dims=2,stock_check=False):
 
     X_train, X_test, y_train = convert_data_to_tensors(X_train, X_test, y_train, image_bool=not stock_check)
     
-    layers = [2,3,4,5]
+    layers = [2,3,4]
     dropouts = [0]
     for l in layers:
         for n in increments:
             for dropout in dropouts:
 
-                model = EasyLSTM(X_train.shape[2], y_train.shape[1], n, l, dropout,criterion_str="HuberLoss", problem_type=1,
+                model = EasyLSTM(X_train.shape[2], y_train.shape[1], n, l, dropout,learning_rate=0.001,criterion_str="HuberLoss", problem_type=1,
                                         verbose=True)
                 evaluate_model(model, X_train, X_test, y_train, y_test, data_logger)
 
@@ -289,9 +287,9 @@ def cnn_tests(dataset_id, df,dims=2,stock_check=True):
     # Generate neural network models based on the problem type and output size
 
     hid = 2
-    conv_per_blocks = [1,2,3]
-    pool_blocks= [1,2,3]
-    channels = [2,4,8,16,32,64,128]
+    conv_per_blocks = [1,2,3,4]
+    pool_blocks= [1,2,3,4]
+    channels =  [2,4,8,16,32,64,128]
 
     for pool in pool_blocks:
         for conv in conv_per_blocks:
@@ -350,7 +348,7 @@ def ensamble_tests(dataset_id,dataset):
     joblib.dump(best_model, 'best_model.joblib')
 
 if __name__ == '__main__':
-    id = "Test 3"
+    id = "Experiment 1 Default Data"
     
     #sk 0
     #xbg 1
@@ -363,8 +361,8 @@ if __name__ == '__main__':
     #cnn nerf -5
     #cnn IGTD 6
     #bagging 7
-    conds = [5,6]
-    days_obs = 5
+    conds = [2,3,4]
+    days_obs = 1
     #conds = [1]
     for cond in conds:
         if cond == 0:

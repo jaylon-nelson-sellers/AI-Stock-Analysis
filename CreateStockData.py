@@ -4,7 +4,7 @@ import yfinance as yf
 from sklearn.preprocessing import RobustScaler, OneHotEncoder
 from ta import add_all_ta_features
 from pathlib import Path
-from datetime import datetime
+
 
 def filter_companies(file_name, stocks):
     """
@@ -145,5 +145,20 @@ if __name__ == '__main__':
     num_stocks = 1
     tickers = [
     '^GSPC',
+    '^TYX',
+    'GC=F',
+    'BTC-USD',
+    '^SP500-50',
+    '^SP500-40',
+    '^SP500-25',
+    '^SP500-60',
+    '^SP500-30',
+    '^GSPE',
+    '^SP500-20',
+    '^SP500-15',
+    '^SP500-55',
+    '^SP500-45',
+    '^SP500-35'
     ]
-    St = CreateStockData(5, 10, tickers, add_technical_indicators=True)
+    ###NEED TO CHANGE LOADSTOCKDATASET BEFORE RUNNING TESTS
+    St = CreateStockData(1, 10, tickers, add_technical_indicators=True)

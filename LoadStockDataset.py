@@ -99,8 +99,8 @@ class LoadStockDataset:
             print(self.feats.shape)
             
     def IGTD(self):
-        print(math.sqrt(self.feats.shape[1]))
-        num_columns = int(math.sqrt(self.feats.shape[1]))
+        print(math.sqrt(self.feats.shape[1]) * self.observed)
+        num_columns = int(math.sqrt(self.feats.shape[1]) * self.observed)
         if not self.is_power_of_two(num_columns):
             next_pow2 = self.next_smallest_power_of_two(num_columns)
         print(next_pow2)
