@@ -28,18 +28,16 @@ class LoadStockDataset:
         if normalize:
             self.observed = dataset_index
             self.feats = pd.read_csv("feats.csv")
+            #NOTE Deletes DATE column
             self.normalize()
             self.feats.to_csv("feats_n.csv", index=False)
             self.targets = pd.read_csv("regress.csv")
             return
 
-        if dataset_index == 1:
-            self.observed = 1
-        elif dataset_index == 10:
-            self.observed = 10
-        else:
-            self.observed = 100
-
+        self.observed = dataset_index
+        self.feats = pd.read_csv("feats_n.csv")
+        self.targets = pd.read_csv("regress.csv")
+        return 0
 
         # Read classification, features, and regression targets
         # change back after vae
