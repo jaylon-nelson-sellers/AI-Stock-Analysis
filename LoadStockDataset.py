@@ -37,31 +37,30 @@ class LoadStockDataset:
         self.observed = dataset_index
         self.feats = pd.read_csv("feats_n.csv")
         self.targets = pd.read_csv("regress.csv")
-        return 0
+
 
         # Read classification, features, and regression targets
         # change back after vae
 
         # Select targets based on the target index
+        if False:
+            # Replace missing and infinite values with zero
+            self.feats.replace([np.nan, np.inf, -np.inf], 0, inplace=True)
+            self.targets.replace([np.nan, np.inf, -np.inf], 0, inplace=True)
 
+            def convert_to_numeric(df):
+                return df.apply(pd.to_numeric, errors='coerce').fillna(0)
 
-        # Replace missing and infinite values with zero
-        self.feats.replace([np.nan, np.inf, -np.inf], 0, inplace=True)
-        self.targets.replace([np.nan, np.inf, -np.inf], 0, inplace=True)
+            self.feats = convert_to_numeric(self.feats)
+            self.targets = convert_to_numeric(self.targets)
 
-        def convert_to_numeric(df):
-            return df.apply(pd.to_numeric, errors='coerce').fillna(0)
+            # Normalize features if requested
 
-        self.feats = convert_to_numeric(self.feats)
-        self.targets = convert_to_numeric(self.targets)
-
-        # Normalize features if requested
-
-        # Replace missing and infinite values with zero
-        self.feats.replace([np.nan, np.inf, -np.inf], 0, inplace=True)
-        self.targets.replace([np.nan, np.inf, -np.inf], 0, inplace=True)
-        #
-        #print("Dataset Loaded")
+            # Replace missing and infinite values with zero
+            self.feats.replace([np.nan, np.inf, -np.inf], 0, inplace=True)
+            self.targets.replace([np.nan, np.inf, -np.inf], 0, inplace=True)
+            #
+            #print("Dataset Loaded")
 
     def get_train_test_split(self, split=0.2):
         """
@@ -95,8 +94,13 @@ class LoadStockDataset:
             print("Shape of feats:", data_condition2.shape)
             self.feats = data_condition2
             print(self.feats.shape)
-            
-    def IGTD(self):
+
+    def IGTD(self):          
+        """
+        IGTD Function for data augmentation.
+        @param self reference
+        @sum
+        """
         print(math.sqrt(self.feats.shape[1]) * self.observed)
         num_columns = int(math.sqrt(self.feats.shape[1]) * self.observed)
         if not self.is_power_of_two(num_columns):

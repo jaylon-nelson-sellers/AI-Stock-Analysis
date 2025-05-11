@@ -50,8 +50,6 @@ class CreateStockData:
         regression_targets = self.calculate_targets(stock_data['Close'], self.target_days)
         stock_data = stock_data.iloc[:-self.target_days]
 
-        ###NOTE: TEMPORARY DELETION OF DATE VALUE
-        stock_data = stock_data.drop('Date', axis=1)
         stock_data = self.prepare_features(stock_data, self.observation_days)
 
         assert stock_data.shape[0] == regression_targets.shape[0]
@@ -147,9 +145,7 @@ class CreateStockData:
 if __name__ == '__main__':
     num_stocks = 1
     tickers = [
-    '^GSPC',
-    '^TYX',
+    '^GSPC'
     ]
-    ###NEED TO CHANGE LOADSTOCKDATASET BEFORE RUNNING TESTS
-    ###NOTE DATE IS REMOVED
-    St = CreateStockData(100, 10, tickers, add_technical_indicators=True)
+
+    St = CreateStockData(1, 10, tickers, add_technical_indicators=True)
