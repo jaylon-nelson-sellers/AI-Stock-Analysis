@@ -98,4 +98,4 @@ def evaluate_model(model, X_train, X_test, y_train, y_test, data_logger):
 
 
     data_logger.save_info(model, "Full", results)
-    return acc
+    return rmse

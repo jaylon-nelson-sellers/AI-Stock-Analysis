@@ -80,7 +80,9 @@ class CreateStockData:
 
         # Remove the identified non-informative columns from the DataFrame
         stock_data_cleaned = combined_data.drop(columns=columns_to_delete)
-
+        ########################################
+        #remove date
+        stock_data_cleaned = stock_data_cleaned.drop('Date', axis=1)
         return stock_data_cleaned
 
     def prepare_features(self, stock_data: pd.DataFrame, observation_days: int) -> pd.DataFrame:
@@ -145,7 +147,7 @@ class CreateStockData:
 if __name__ == '__main__':
     num_stocks = 1
     tickers = [
-    '^GSPC'
+    '^GSPC',
     ]
 
-    St = CreateStockData(1, 10, tickers, add_technical_indicators=True)
+    St = CreateStockData(200, 20, tickers, add_technical_indicators=True)

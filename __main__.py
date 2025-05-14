@@ -21,9 +21,13 @@ from LoadStockDataset import LoadStockDataset
 import xgboost as xgb
 from sklearn.pipeline import Pipeline
 from sklearn.ensemble import StackingRegressor
+import winsound
 
-increments = [8,12,16,24,32,48,64,96,128,192,256,384,512,768,1024]
-
+increments = [32,40,48,64,80,96,128,160,192,256,320,384,512,640,384*2,1024,1280,384*4] # Full Measures
+#increments = [64,128,256,512,1024,1024*2,1024*4] #Half Measures
+#increments = [64,128,128+64,256-32,256,256+64,384,384+64,448] #384 Band
+#increments = [64,96,128,192,256,384,512,1024,1024*2,1024*4]
+#increments = [64,96,128,160,192,256,384]#256 band
 
 def convert_data_to_tensors(X_train, X_test, y_train,image_bool=False):
     """ Convert numpy arrays to PyTorch tensors.
@@ -93,7 +97,7 @@ def sklearn_tests(dataset_id,dataset):
         DecisionTreeRegressor(),
         KNeighborsRegressor(),
     ]
-    nums = [8,16,32,64,128,256]
+    nums = [128,int(128*1.5),256]
 
     for i in nums:
         classifiers.append(RandomForestRegressor(n_jobs=-1,n_estimators=i),
@@ -172,22 +176,15 @@ def nn_tests(dataset_id, dataset):
     best_score = -1
     best_model = None
     dropout = [0]
-    lr = 0.001
+    lr = 0.0001
     for i in increments:
         for d in dropout:
             neurons = i
-            
-            h = (neurons, neurons)
-            model = EasyNeuralNet(y_train.shape[1],h,d,learning_rate=lr,batch_norm=True,image_bool=False,problem_type=1,verbose=True)
-            print(evaluate_model(model, X_train, X_test, y_train, y_test, data_logger))
-"""
-            h = (neurons, neurons, neurons)
+            h = (neurons, int(neurons), neurons)
             model = EasyNeuralNet(y_train.shape[1],h,d,learning_rate=lr,batch_norm=True,image_bool=False,problem_type=1,verbose=True)
             print(evaluate_model(model, X_train, X_test, y_train, y_test, data_logger))
 
-            h = (neurons, neurons, neurons, neurons)
-            model = EasyNeuralNet(y_train.shape[1],h,d,learning_rate=lr,batch_norm=True,image_bool=False,problem_type=1,verbose=True)
-            print(evaluate_model(model, X_train, X_test, y_train, y_test, data_logger))"""
+
 
 
 
@@ -211,7 +208,7 @@ def reccurent_tests(dataset_id, df,dims=2,stock_check=False):
 
     X_train, X_test, y_train = convert_data_to_tensors(X_train, X_test, y_train, image_bool=not stock_check)
 
-    layers = [4,5]
+    layers = [1]
     dropouts = [0]
     for l in layers:
         for n in increments:
@@ -240,15 +237,21 @@ def lstm_tests(dataset_id, df,dims=2,stock_check=False):
 
     X_train, X_test, y_train = convert_data_to_tensors(X_train, X_test, y_train, image_bool=not stock_check)
     
-    layers = [4,5]
+    layers = [3]
     dropouts = [.25,.5]
+    best_score = 1000
+    best_model = None
     for l in layers:
         for n in increments:
             for dropout in dropouts:
 
                 model = EasyLSTM(X_train.shape[2], y_train.shape[1], n, l, dropout,learning_rate=0.001,criterion_str="HuberLoss", problem_type=1,
                                         verbose=True)
-                evaluate_model(model, X_train, X_test, y_train, y_test, data_logger)
+                curr_score = evaluate_model(model, X_train, X_test, y_train, y_test, data_logger)
+                if curr_score < best_score:
+                    best_model = model
+                    
+    joblib.dump(best_model, 'best_SP_model.joblib')
 
 def cnn_tests(dataset_id, df,dims=2,stock_check=True):
     """ Test convolutional neural network (CNN) models with 3D data from a specified dataset.
@@ -292,7 +295,7 @@ def cnn_tests(dataset_id, df,dims=2,stock_check=True):
         for conv in conv_per_blocks:
             for chan in channels:
                 if problem_type == "regression":
-                    model = EasyConvNet(inputs, outputs, criterion_str= "HuberLoss", dimensions=dims,
+                    model = EasyConvNet(inputs, outputs,learning_rate=0.0001, criterion_str= "HuberLoss", dimensions=dims,
                                         num_channels=chan, conv_layers_per_block=conv,
                                         pool_blocks=pool, dense_layers=hid,problem_type=1, verbose=True)
                     evaluate_model(model, X_train, X_test, y_train, y_test, data_logger)
@@ -345,7 +348,7 @@ def ensamble_tests(dataset_id,dataset):
     joblib.dump(best_model, 'best_model.joblib')
 
 if __name__ == '__main__':
-    id = "Experiment 1, SP500,10D"
+
     
     #sk 0
     #xbg 1
@@ -358,8 +361,9 @@ if __name__ == '__main__':
     #cnn nerf -5
     #cnn IGTD 6
     #bagging 7
-    conds = [3]
-    days_obs = 100
+    conds = [4]
+    id = "Experiment 6, MXD,1D, NODATE"
+    days_obs = 200
     print("{0} Days used for this data!".format(days_obs))
     #conds = [1]
     for cond in conds:
@@ -385,7 +389,7 @@ if __name__ == '__main__':
             dataset = ld.get_3d(version=1)
             reccurent_tests(id,dataset)
         if cond == 4:
-            ld = LoadStockDataset(dataset_index=days_obs,normalize=1)
+            ld = LoadStockDataset(dataset_index=days_obs,normalize=0)
             dataset = ld.get_3d(version=1)        
             lstm_tests(id,dataset)
         if cond == -4:
@@ -404,3 +408,7 @@ if __name__ == '__main__':
             ld = LoadStockDataset(dataset_index=days_obs,normalize=1)
             dataset = ld.get_3d(version=2)
             cnn_tests(id,dataset,dims=2)
+
+    frequency = 2500  # Hertz
+    duration = 5000 # Milliseconds
+    #winsound.Beep(frequency, duration)
