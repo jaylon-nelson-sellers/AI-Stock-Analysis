@@ -23,12 +23,12 @@ from sklearn.pipeline import Pipeline
 from sklearn.ensemble import StackingRegressor
 import winsound
 
-increments = [32,40,48,64,80,96,128,160,192,256,320,384,512,640,384*2,1024,1280,384*4] # Full Measures
-#increments = [64,128,256,512,1024,1024*2,1024*4] #Half Measures
+#increments = [80,128,160,192,256,320,384,512,640,384*2] # Full Measures
+increments = [64,128,256,512,1024,1024*2,1024*4] #Half Measures
 #increments = [64,128,128+64,256-32,256,256+64,384,384+64,448] #384 Band
 #increments = [64,96,128,192,256,384,512,1024,1024*2,1024*4]
 #increments = [64,96,128,160,192,256,384]#256 band
-
+increments = [16,24,32,48,64,96,128,192] #Half Measures
 def convert_data_to_tensors(X_train, X_test, y_train,image_bool=False):
     """ Convert numpy arrays to PyTorch tensors.
 
@@ -97,7 +97,7 @@ def sklearn_tests(dataset_id,dataset):
         DecisionTreeRegressor(),
         KNeighborsRegressor(),
     ]
-    nums = [128,int(128*1.5),256]
+    nums = [50,100]
 
     for i in nums:
         classifiers.append(RandomForestRegressor(n_jobs=-1,n_estimators=i),
@@ -115,7 +115,7 @@ def sklearn_tests(dataset_id,dataset):
             best_score = score
             best_model = model
 
-    joblib.dump(best_model, 'best_model.joblib')
+    joblib.dump(best_model, 'best_Tree_model.joblib')
 
 
 
@@ -208,16 +208,22 @@ def reccurent_tests(dataset_id, df,dims=2,stock_check=False):
 
     X_train, X_test, y_train = convert_data_to_tensors(X_train, X_test, y_train, image_bool=not stock_check)
 
-    layers = [1]
+    layers = [5]
     dropouts = [0]
+    best_score = 1000
+    best_model = None
     for l in layers:
         for n in increments:
             for dropout in dropouts:
 
                 model = EasyRecNet(X_train.shape[2], y_train.shape[1], n, l, dropout=dropout,criterion="HuberLoss",learning_rate=0.001, problem_type=1,
                                         verbose=True)
-                evaluate_model(model, X_train, X_test, y_train, y_test, data_logger)
-
+                curr_score = evaluate_model(model, X_train, X_test, y_train, y_test, data_logger)
+                print(curr_score)
+                if curr_score < best_score:
+                    best_model = model
+                    
+    joblib.dump(best_model, 'best_SP_model.joblib')
 
 
 def lstm_tests(dataset_id, df,dims=2,stock_check=False):
@@ -237,7 +243,7 @@ def lstm_tests(dataset_id, df,dims=2,stock_check=False):
 
     X_train, X_test, y_train = convert_data_to_tensors(X_train, X_test, y_train, image_bool=not stock_check)
     
-    layers = [3]
+    layers = [2]
     dropouts = [.25,.5]
     best_score = 1000
     best_model = None
@@ -248,6 +254,7 @@ def lstm_tests(dataset_id, df,dims=2,stock_check=False):
                 model = EasyLSTM(X_train.shape[2], y_train.shape[1], n, l, dropout,learning_rate=0.001,criterion_str="HuberLoss", problem_type=1,
                                         verbose=True)
                 curr_score = evaluate_model(model, X_train, X_test, y_train, y_test, data_logger)
+                print(curr_score)
                 if curr_score < best_score:
                     best_model = model
                     
@@ -361,9 +368,9 @@ if __name__ == '__main__':
     #cnn nerf -5
     #cnn IGTD 6
     #bagging 7
-    conds = [4]
-    id = "Experiment 6, MXD,1D, NODATE"
-    days_obs = 200
+    conds = [3]
+    id = "Experiment 1, Silver,1D"
+    days_obs = 25
     print("{0} Days used for this data!".format(days_obs))
     #conds = [1]
     for cond in conds:
@@ -389,7 +396,7 @@ if __name__ == '__main__':
             dataset = ld.get_3d(version=1)
             reccurent_tests(id,dataset)
         if cond == 4:
-            ld = LoadStockDataset(dataset_index=days_obs,normalize=0)
+            ld = LoadStockDataset(dataset_index=days_obs,normalize=1)
             dataset = ld.get_3d(version=1)        
             lstm_tests(id,dataset)
         if cond == -4:

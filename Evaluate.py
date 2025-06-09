@@ -95,7 +95,8 @@ def evaluate_model(model, X_train, X_test, y_train, y_test, data_logger):
 
     # If you are logging data, consider adding the new columns to your data_logger here.
     # For example: data_logger.log_results(results)
-
-
+    print("----------------------------------------")
+    print(rmse)
+    print("----------------------------------------")
     data_logger.save_info(model, "Full", results)
     return rmse
