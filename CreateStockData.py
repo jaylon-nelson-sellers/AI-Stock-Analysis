@@ -48,6 +48,8 @@ class CreateStockData:
         stock_data = self.get_stock_data()
 
         regression_targets = self.calculate_targets(stock_data['Close'], self.target_days)
+        #REMOVE REMOVE REMOVE
+        #doing this while testing
         stock_data = stock_data.iloc[:-self.target_days]
 
         stock_data = self.prepare_features(stock_data, self.observation_days)
@@ -82,7 +84,7 @@ class CreateStockData:
         stock_data_cleaned = combined_data.drop(columns=columns_to_delete)
         ########################################
         #remove date
-        #stock_data_cleaned = stock_data_cleaned.drop('Date', axis=1)
+        stock_data_cleaned = stock_data_cleaned.drop('Date', axis=1)
         return stock_data_cleaned
 
     def prepare_features(self, stock_data: pd.DataFrame, observation_days: int) -> pd.DataFrame:
@@ -104,11 +106,11 @@ class CreateStockData:
     def calculate_targets(self, close_prices: pd.Series, future_days: int) -> pd.DataFrame:
         regression_targets = pd.DataFrame(index=close_prices.index)
 
-        for day in range(1,future_days + 1):
+        for day in range(future_days + 1):
             future_close = close_prices.shift(-day)
 
             # Calculate the  change for the regression target
-            regression_targets[f"Change_{day}-Day"] = ((future_close/close_prices)-1)*100
+            regression_targets[f"Price_{day}-Day"] = future_close
 
         return regression_targets.iloc[self.observation_days:-self.target_days]
 
@@ -147,7 +149,7 @@ class CreateStockData:
 if __name__ == '__main__':
     num_stocks = 1
     tickers = [
-    'SI=F',
+    '^GSPC',
     ]
 
-    St = CreateStockData(25, 5, tickers, add_technical_indicators=True)
+    St = CreateStockData(1, 10, tickers, add_technical_indicators=False)

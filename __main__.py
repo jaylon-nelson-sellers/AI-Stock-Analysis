@@ -28,7 +28,8 @@ increments = [64,128,256,512,1024,1024*2,1024*4] #Half Measures
 #increments = [64,128,128+64,256-32,256,256+64,384,384+64,448] #384 Band
 #increments = [64,96,128,192,256,384,512,1024,1024*2,1024*4]
 #increments = [64,96,128,160,192,256,384]#256 band
-increments = [16,24,32,48,64,96,128,192] #Half Measures
+#increments = [16,24,32,48,64,96,128,192]
+
 def convert_data_to_tensors(X_train, X_test, y_train,image_bool=False):
     """ Convert numpy arrays to PyTorch tensors.
 
@@ -176,11 +177,11 @@ def nn_tests(dataset_id, dataset):
     best_score = -1
     best_model = None
     dropout = [0]
-    lr = 0.0001
+    lr = 0.001
     for i in increments:
         for d in dropout:
             neurons = i
-            h = (neurons, int(neurons), neurons)
+            h = (neurons, neurons)
             model = EasyNeuralNet(y_train.shape[1],h,d,learning_rate=lr,batch_norm=True,image_bool=False,problem_type=1,verbose=True)
             print(evaluate_model(model, X_train, X_test, y_train, y_test, data_logger))
 
@@ -208,7 +209,7 @@ def reccurent_tests(dataset_id, df,dims=2,stock_check=False):
 
     X_train, X_test, y_train = convert_data_to_tensors(X_train, X_test, y_train, image_bool=not stock_check)
 
-    layers = [5]
+    layers = [1]
     dropouts = [0]
     best_score = 1000
     best_model = None
@@ -243,8 +244,8 @@ def lstm_tests(dataset_id, df,dims=2,stock_check=False):
 
     X_train, X_test, y_train = convert_data_to_tensors(X_train, X_test, y_train, image_bool=not stock_check)
     
-    layers = [2]
-    dropouts = [.25,.5]
+    layers = [1]
+    dropouts = [0,.25,.5]
     best_score = 1000
     best_model = None
     for l in layers:
@@ -354,9 +355,14 @@ def ensamble_tests(dataset_id,dataset):
 
     joblib.dump(best_model, 'best_model.joblib')
 
-if __name__ == '__main__':
+import yfinance as yf
+import pandas as pd
+import numpy as np
+import ta  # Technical Analysis library
+import warnings
 
-    
+
+if __name__ == '__main__':
     #sk 0
     #xbg 1
     #nn 2
@@ -368,9 +374,9 @@ if __name__ == '__main__':
     #cnn nerf -5
     #cnn IGTD 6
     #bagging 7
-    conds = [3]
-    id = "Experiment 1, Silver,1D"
-    days_obs = 25
+    conds = [0,2,3,4]
+    id = "Experiment 1, SP, 1D, NODATE"
+    days_obs = 1
     print("{0} Days used for this data!".format(days_obs))
     #conds = [1]
     for cond in conds:
@@ -418,4 +424,16 @@ if __name__ == '__main__':
 
     frequency = 2500  # Hertz
     duration = 5000 # Milliseconds
-    #winsound.Beep(frequency, duration)
+
+
+
+def test_model(self):
+    days_obs = 1
+    ld = LoadStockDataset(dataset_index=days_obs,normalize=1)
+    dataset = ld.getTesting()
+    print(dataset.shape)
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    dataset = torch.tensor(dataset, dtype=torch.float32, device=device)
+    #print(dataset)
+    model = joblib.load('best_SP_model.joblib')
+    print(model.predict(dataset))

@@ -87,6 +87,32 @@ class LoadStockDataset:
             feats_3d = np.concatenate((feats_3d, random_array), axis=2)
         return feats_3d
 
+    def getTesting(self):
+        feats = self.feats.tail(1).copy()
+        observed = self.observed + 1
+        # Add empty columns if necessary
+        num_columns = feats.shape[1]
+        remainder = num_columns % observed
+        if remainder != 0:
+            num_extra_columns = observed - remainder
+            print(f"Adding {num_extra_columns} to fill Dataframe")
+            # Perform FastICA with num_extra_columns components
+            ica = FastICA(n_components=num_extra_columns, random_state=0)
+            ica_components = ica.fit_transform(feats)
+
+            # Add the FastICA components as new columns to feats
+            for i in range(num_extra_columns):
+                feats[f'ica_{i}'] = ica_components[:, i]
+        self.feats = feats
+        # self.feats.to_csv(f"feats_days-{self.observed}_comp-{self.feats.shape[1]}-v2.csv", index=False)
+
+        # Reshape the dataframe to 3D
+        new_depth = observed
+        new_shape = (feats.shape[0], feats.shape[1] // new_depth, new_depth)
+        feats_3d = feats.values.reshape(new_shape)
+        feats_3d = np.swapaxes(feats_3d, 1, 2)
+        return feats_3d
+
     def getIGTD(self):
         with open("IGTD\Results.pkl", 'rb') as picklefile:
             feats = pickle.load(picklefile)
