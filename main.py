@@ -21,7 +21,6 @@ from LoadStockDataset import LoadStockDataset
 import xgboost as xgb
 from sklearn.pipeline import Pipeline
 from sklearn.ensemble import StackingRegressor
-import winsound
 
 #increments = [80,128,160,192,256,320,384,512,640,384*2] # Full Measures
 increments = [64,128,256,512,1024,1024*2,1024*4] #Half Measures
