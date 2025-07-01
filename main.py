@@ -98,10 +98,17 @@ def sklearn_tests(dataset_id,dataset,ticker):
         #DecisionTreeRegressor()
     ]
     nums = [100]
-
+        
+    param_dist = {
+        'n_estimators': [100, 300, 500],
+        'max_features': ['auto', 'sqrt', 0.3, 0.5],
+        'max_depth': [None, 10, 20, 30],
+        'min_samples_split': [2, 5, 10],
+        'min_samples_leaf': [1, 2, 4],
+        'bootstrap': [False, True]
+    }
     for i in nums:
-        classifiers.append(RandomForestRegressor(n_jobs=-1,n_estimators=i),
-        )
+
         classifiers.append(ExtraTreesRegressor(n_jobs=-1,n_estimators=i),
         )
         
