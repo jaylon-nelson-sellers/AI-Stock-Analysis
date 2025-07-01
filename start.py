@@ -110,11 +110,11 @@ if st.button("Get Fresh DOGE Data + Predict"):
     predict_data(get_ticker(tick,2),tick[0])
 
 st.title("ADA Functions")
-if st.button("Create new DOGE Model"):
+if st.button("Create new ADA Model"):
     tick = ["ADA-USD"]
     st.session_state.data = get_ticker(tick,1)
     create_simple_model(tick)
 
-if st.button("Get Fresh DOGE Data + Predict"):
+if st.button("Get Fresh ADA Data + Predict"):
     tick = ["ADA-USD"]
     predict_data(get_ticker(tick,2),tick[0])
