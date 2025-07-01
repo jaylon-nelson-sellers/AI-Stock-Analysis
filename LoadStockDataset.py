@@ -29,7 +29,7 @@ class LoadStockDataset:
         #NOTE Deletes DATE column
         if normalize:
             self.normalize()
-        self.feats.to_csv(ticker + "_feats.csv", index=False)
+        #self.feats.to_csv(ticker + "_feats.csv", index=False)
         self.targets = pd.read_csv(ticker +"_regress.csv")
         return    
 
