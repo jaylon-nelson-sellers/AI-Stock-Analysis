@@ -6,29 +6,6 @@ from ta import add_all_ta_features
 from pathlib import Path
 
 
-def filter_companies(file_name, stocks):
-    """
-    Filters companies to US only (New York Stock Exchange)
-
-    Parameters:
-    - file_name (str): The name of the CSV file containing company data.
-    - stocks (int): number of stock tickers to save
-
-    Returns:
-    - DataFrame: Filtered DataFrame with companies from the United States.
-    """
-    # Read the CSV file
-    df = pd.read_csv(file_name)
-
-    # Fill NaN values in 'country' column with an empty string
-    df['country'] = df['country'].fillna('')
-
-    # Filter the DataFrame
-    filtered_df = df[df["country"].str.contains("United States")].head(stocks)
-
-    # Return the filtered DataFrame
-    return filtered_df
-
 class CreateStockData:
         
     def __init__(self, observation_days: int, target_days: int, tickers: list,
@@ -42,14 +19,28 @@ class CreateStockData:
             f"Data_d-{self.observation_days}_t-{self.target_days}")
         self.process_stock_data()
     
-   
+    def get_recent_data(self):
+        stock_data = self.get_stock_data()
+
+        regression_targets = self.calculate_targets(stock_data['Close'], self.target_days)
+
+
+
+        stock_data = self.prepare_features(stock_data, self.observation_days)
+
+        #assert stock_data.shape[0] == regression_targets.shape[0]
+
+        stock_data.reset_index(inplace=True, drop=True)
+
+        
+        stock_data = stock_data.iloc[-1]
+        return stock_data
 
     def process_stock_data(self):
         stock_data = self.get_stock_data()
 
         regression_targets = self.calculate_targets(stock_data['Close'], self.target_days)
-        #REMOVE REMOVE REMOVE
-        #doing this while testing
+
         stock_data = stock_data.iloc[:-self.target_days]
 
         stock_data = self.prepare_features(stock_data, self.observation_days)
@@ -84,7 +75,7 @@ class CreateStockData:
         stock_data_cleaned = combined_data.drop(columns=columns_to_delete)
         ########################################
         #remove date
-        stock_data_cleaned = stock_data_cleaned.drop('Date', axis=1)
+        #stock_data_cleaned = stock_data_cleaned.drop('Datetime', axis=1)
         return stock_data_cleaned
 
     def prepare_features(self, stock_data: pd.DataFrame, observation_days: int) -> pd.DataFrame:
@@ -115,10 +106,10 @@ class CreateStockData:
         return regression_targets.iloc[self.observation_days:-self.target_days]
 
     def save_data(self, features: pd.DataFrame, regress_targets: pd.DataFrame) -> int:
-        self.base_dir.mkdir(parents=True, exist_ok=True)
+        #self.base_dir.mkdir(parents=True, exist_ok=True)
 
-        features_path = 'feats.csv'
-        regress_targets_path ='regress.csv'
+        features_path = str(self.tickers[0]) +'_feats.csv'
+        regress_targets_path =str(self.tickers[0]) + '_regress.csv'
 
         features.fillna(0).to_csv(features_path, index=False)
         regress_targets.fillna(0).to_csv(regress_targets_path, index=False)
@@ -127,7 +118,7 @@ class CreateStockData:
 
     def download_stock_data(self, symbol: str) -> pd.DataFrame:
         y = yf.Ticker(symbol)
-        hist = y.history(period="max")
+        hist = y.history(interval="5m", period="60d")
         hist = hist.drop(columns=['Dividends', 'Stock Splits'], errors='ignore').dropna()
         return hist
 
@@ -149,7 +140,7 @@ class CreateStockData:
 if __name__ == '__main__':
     num_stocks = 1
     tickers = [
-    '^GSPC',
+    'BTC-USD',
     ]
 
-    St = CreateStockData(1, 10, tickers, add_technical_indicators=False)
+    St = CreateStockData(1, 5, tickers, add_technical_indicators=True)

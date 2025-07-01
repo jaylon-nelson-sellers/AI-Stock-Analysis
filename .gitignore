@@ -9,3 +9,4 @@ best__xgb_model.joblib
 best_NN_model.joblib
 best__xgb_model.joblib
 best_NN_model.joblib
+*.joblib

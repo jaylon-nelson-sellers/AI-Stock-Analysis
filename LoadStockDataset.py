@@ -17,50 +17,24 @@ class LoadStockDataset:
     A class to load, preprocess, normalize, and select features from a dataset.
     """
 
-    def __init__(self, dataset_index, normalize=1, verbose=0):
+    def __init__(self, dataset_index, tickers, normalize=1, verbose=0,):
         """
         Initializes the dataset by loading files, normalizing features, and selecting features based on the parameters.
         """
+        ticker = tickers[0]
         # Print loading message if verbose
         if verbose:
             print("Loading File")
         # need to change
-        if normalize:
-            self.observed = dataset_index
-            self.feats = pd.read_csv("feats.csv")
-            #NOTE Deletes DATE column
-            self.normalize()
-            self.feats.to_csv("feats_n.csv", index=False)
-            self.targets = pd.read_csv("regress.csv")
-            return
-
         self.observed = dataset_index
-        self.feats = pd.read_csv("feats_n.csv")
-        self.targets = pd.read_csv("regress.csv")
+        self.feats = pd.read_csv(ticker + "_feats.csv")
+        #NOTE Deletes DATE column
+        if normalize:
+            self.normalize()
+        self.feats.to_csv(ticker + "_feats_n.csv", index=False)
+        self.targets = pd.read_csv(ticker +"_regress.csv")
+        return    
 
-
-        # Read classification, features, and regression targets
-        # change back after vae
-
-        # Select targets based on the target index
-        if False:
-            # Replace missing and infinite values with zero
-            self.feats.replace([np.nan, np.inf, -np.inf], 0, inplace=True)
-            self.targets.replace([np.nan, np.inf, -np.inf], 0, inplace=True)
-
-            def convert_to_numeric(df):
-                return df.apply(pd.to_numeric, errors='coerce').fillna(0)
-
-            self.feats = convert_to_numeric(self.feats)
-            self.targets = convert_to_numeric(self.targets)
-
-            # Normalize features if requested
-
-            # Replace missing and infinite values with zero
-            self.feats.replace([np.nan, np.inf, -np.inf], 0, inplace=True)
-            self.targets.replace([np.nan, np.inf, -np.inf], 0, inplace=True)
-            #
-            #print("Dataset Loaded")
 
     def get_train_test_split(self, split=0.2):
         """
