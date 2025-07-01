@@ -62,16 +62,12 @@ data = []
 
 if st.button("Create new BTC Model"):
     tick = ["BTC-USD"]
-    st.session_state.data = get_ticker(tick,1)
+    get_ticker(tick,1)
     create_simple_model(tick)
 
-if st.button("Get Fresh BTC Data"):
+if st.button("Get Fresh BTC Data + Predict"):
     tick = ["BTC-USD"]
-    st.session_state.data = get_ticker(tick,2)
-
-if st.button("Predict BTC Price"):
-    tick = "BTC-USD"
-    predict_data( st.session_state.data ,tick)
+    predict_data(get_ticker(tick,2),tick[0])
 
 st.title("ETH Functions")
 if st.button("Create new ETH Model"):
@@ -79,14 +75,9 @@ if st.button("Create new ETH Model"):
     st.session_state.data = get_ticker(tick,1)
     create_simple_model(tick)
 
-if st.button("Get Fresh ETH Data"):
+if st.button("Get Fresh ETH Data + Predict"):
     tick = ["ETH-USD"]
-    st.session_state.data = get_ticker(tick,2)
-
-if st.button("Predict ETH Price"):
-    tick = "ETH-USD"
-    predict_data( st.session_state.data ,tick)
-
+    predict_data(get_ticker(tick,2),tick[0])
 
 st.title("XRP Functions")
 if st.button("Create new XRP Model"):
@@ -94,14 +85,9 @@ if st.button("Create new XRP Model"):
     st.session_state.data = get_ticker(tick,1)
     create_simple_model(tick)
 
-if st.button("Get Fresh XRP Data"):
+if st.button("Get Fresh XRP Data + Predict"):
     tick = ["XRP-USD"]
-    st.session_state.data = get_ticker(tick,2)
-
-if st.button("Predict XRP Price"):
-    tick = "XRP-USD"
-    predict_data( st.session_state.data ,tick)
-
+    predict_data(get_ticker(tick,2),tick[0])
 
 st.title("SOL Functions")
 if st.button("Create new SOL Model"):
@@ -109,14 +95,9 @@ if st.button("Create new SOL Model"):
     st.session_state.data = get_ticker(tick,1)
     create_simple_model(tick)
 
-if st.button("Get Fresh SOL Data"):
+if st.button("Get Fresh SOL Data + Predict"):
     tick = ["SOL-USD"]
-    st.session_state.data = get_ticker(tick,2)
-
-if st.button("Predict SOL Price"):
-    tick = "SOL-USD"
-    predict_data( st.session_state.data ,tick)
-
+    predict_data(get_ticker(tick,2),tick[0])
 
 st.title("DOGE Functions")
 if st.button("Create new DOGE Model"):
@@ -124,11 +105,16 @@ if st.button("Create new DOGE Model"):
     st.session_state.data = get_ticker(tick,1)
     create_simple_model(tick)
 
-if st.button("Get Fresh DOGE Data"):
+if st.button("Get Fresh DOGE Data + Predict"):
     tick = ["DOGE-USD"]
-    st.session_state.data = get_ticker(tick,2)
+    predict_data(get_ticker(tick,2),tick[0])
 
-if st.button("Predict DOGE Price"):
-    tick = "DOGE-USD"
-    predict_data( st.session_state.data ,tick)
+st.title("ADA Functions")
+if st.button("Create new DOGE Model"):
+    tick = ["ADA-USD"]
+    st.session_state.data = get_ticker(tick,1)
+    create_simple_model(tick)
 
+if st.button("Get Fresh DOGE Data + Predict"):
+    tick = ["ADA-USD"]
+    predict_data(get_ticker(tick,2),tick[0])
