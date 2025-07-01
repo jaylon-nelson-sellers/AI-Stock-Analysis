@@ -29,12 +29,16 @@ def get_pst_intervals(df):
     return intervals
 
 
-def get_ticker(tickers):
-   
+def get_ticker(tickers,option):
+
     St =CSD.CreateStockData(1, 5, tickers, add_technical_indicators=True)
-    st.write("Stock Data Created for " + tick[0])
-    data = St.get_recent_data()
-    return data
+    if option == 1:
+        St.get_stock_data()
+        st.write("Stock Data Created for " + tick[0])
+    if option == 2:
+        data = St.get_recent_data()
+        st.write("Stock Data refreshed for "  + tick[0])
+        return data
     
 def create_simple_model(tickers):
     ld = LoadStockDataset(tickers=tickers, dataset_index=1,normalize=0)
@@ -53,41 +57,78 @@ def predict_data(data,ticker):
     st.write(predictions[:, 1:])
 
 
-st.title("Start Button Example")
+st.title("BTC Functions")
 data = []
-if st.button("Get BTC Data"):
+
+if st.button("Create new BTC Model"):
     tick = ["BTC-USD"]
-    st.session_state.data = get_ticker(tick)
-if st.button("Create_Model"):
-    tick = ["BTC-USD"]
+    st.session_state.data = get_ticker(tick,1)
     create_simple_model(tick)
+
+if st.button("Get Fresh BTC Data"):
+    tick = ["BTC-USD"]
+    st.session_state.data = get_ticker(tick,2)
 
 if st.button("Predict BTC Price"):
     tick = "BTC-USD"
     predict_data( st.session_state.data ,tick)
 
-
-if st.button("Get ETH Data"):
+st.title("ETH Functions")
+if st.button("Create new ETH Model"):
     tick = ["ETH-USD"]
-    st.session_state.data = get_ticker(tick)
-if st.button("Create ETH Model"):
-    tick = ["ETH-USD"]
+    st.session_state.data = get_ticker(tick,1)
     create_simple_model(tick)
+
+if st.button("Get Fresh ETH Data"):
+    tick = ["ETH-USD"]
+    st.session_state.data = get_ticker(tick,2)
 
 if st.button("Predict ETH Price"):
     tick = "ETH-USD"
-    predict_data( st.session_state.data,tick)
+    predict_data( st.session_state.data ,tick)
 
 
-
-if st.button("Get XRP Data"):
+st.title("XRP Functions")
+if st.button("Create new XRP Model"):
     tick = ["XRP-USD"]
-    st.session_state.data = get_ticker(tick)
-if st.button("Create XRP Model"):
-    tick = ["XRP-USD"]
+    st.session_state.data = get_ticker(tick,1)
     create_simple_model(tick)
+
+if st.button("Get Fresh XRP Data"):
+    tick = ["XRP-USD"]
+    st.session_state.data = get_ticker(tick,2)
 
 if st.button("Predict XRP Price"):
     tick = "XRP-USD"
-    predict_data( st.session_state.data,tick)
+    predict_data( st.session_state.data ,tick)
+
+
+st.title("SOL Functions")
+if st.button("Create new SOL Model"):
+    tick = ["SOL-USD"]
+    st.session_state.data = get_ticker(tick,1)
+    create_simple_model(tick)
+
+if st.button("Get Fresh SOL Data"):
+    tick = ["SOL-USD"]
+    st.session_state.data = get_ticker(tick,2)
+
+if st.button("Predict SOL Price"):
+    tick = "SOL-USD"
+    predict_data( st.session_state.data ,tick)
+
+
+st.title("DOGE Functions")
+if st.button("Create new DOGE Model"):
+    tick = ["DOGE-USD"]
+    st.session_state.data = get_ticker(tick,1)
+    create_simple_model(tick)
+
+if st.button("Get Fresh DOGE Data"):
+    tick = ["DOGE-USD"]
+    st.session_state.data = get_ticker(tick,2)
+
+if st.button("Predict DOGE Price"):
+    tick = "DOGE-USD"
+    predict_data( st.session_state.data ,tick)
 

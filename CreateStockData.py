@@ -16,7 +16,6 @@ class CreateStockData:
 
         self.base_dir = Path(
             f"Data_d-{self.observation_days}_t-{self.target_days}")
-        self.process_stock_data()
     
     def get_recent_data(self):
         stock_data = self.get_stock_data()
