@@ -33,7 +33,7 @@ def get_ticker(tickers,option):
 
     St =CSD.CreateStockData(1, 5, tickers, add_technical_indicators=True)
     if option == 1:
-        St.get_stock_data()
+        St.process_stock_data()
         st.write("Stock Data Created for " + tick[0])
     if option == 2:
         data = St.get_recent_data()

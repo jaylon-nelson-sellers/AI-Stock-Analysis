@@ -93,8 +93,9 @@ def sklearn_tests(dataset_id,dataset,ticker):
 
     # Get sklearn classifiers or regressors based on the problem type
     classifiers = [
-        LinearRegression(),
-        DecisionTreeRegressor()
+        
+        #LinearRegression(),
+        #DecisionTreeRegressor()
     ]
     nums = [100]
 
