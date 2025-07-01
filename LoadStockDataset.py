@@ -4,12 +4,10 @@ import pickle
 
 import numpy as np
 import pandas as pd
-from sklearn.cluster import KMeans, AgglomerativeClustering, DBSCAN, HDBSCAN, OPTICS
-from sklearn.decomposition import FastICA, PCA, KernelPCA
-from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import MinMaxScaler, QuantileTransformer, RobustScaler, StandardScaler
 
-from IGTD import min_max_transform, select_features_by_variation, table_to_image
+from sklearn.decomposition import FastICA
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import  StandardScaler
 
 
 class LoadStockDataset:

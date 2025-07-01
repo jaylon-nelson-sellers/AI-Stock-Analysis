@@ -1,7 +1,6 @@
 import warnings
 import pandas as pd
 import yfinance as yf
-from sklearn.preprocessing import RobustScaler, OneHotEncoder
 from ta import add_all_ta_features
 from pathlib import Path
 
