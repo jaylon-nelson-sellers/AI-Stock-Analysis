@@ -106,17 +106,14 @@ def sklearn_tests(dataset_id,dataset,ticker):
 
     classifiers = []
 
-    for i in nums:
-        # Ensemble models with n_estimators param
-        classifiers.append(RandomForestRegressor(n_jobs=-1, n_estimators=i))
-        classifiers.append(ExtraTreesRegressor(n_jobs=-1, n_estimators=i))
-    """
-        # Single estimators without n_estimators param
-        classifiers.append(DecisionTreeRegressor())
-        classifiers.append(LinearRegression())
-        classifiers.append(Lasso())
-        classifiers.append(KNeighborsRegressor())
-    """
+    
+
+    # Single estimators without n_estimators param
+    classifiers.append(DecisionTreeRegressor())
+    classifiers.append(LinearRegression())
+    classifiers.append(Lasso())
+    classifiers.append(KNeighborsRegressor())
+
         
     # Evaluate each model using the training and test data
     best_score = 1000
