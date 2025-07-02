@@ -1,5 +1,7 @@
 import warnings
 import pandas as pd
+from sklearn.discriminant_analysis import StandardScaler
+from sklearn.preprocessing import RobustScaler
 import yfinance as yf
 from ta import add_all_ta_features
 from pathlib import Path
@@ -35,9 +37,16 @@ class CreateStockData:
         return stock_data
 
     def process_stock_data(self):
-        stock_data = self.get_stock_data()
+        stock_data = self.get_btc_data()
 
         regression_targets = self.calculate_targets(stock_data['Close'], self.target_days)
+
+        
+        scaler = RobustScaler()
+        scaled_array = scaler.fit_transform(stock_data.values)
+
+        # Convert back to DataFrame with original columns and index preserved
+        stock_data = pd.DataFrame(scaled_array, columns=stock_data.columns, index=stock_data.index)
 
         stock_data = stock_data.iloc[:-self.target_days]
 
@@ -51,6 +60,8 @@ class CreateStockData:
         stock_data.iloc
 
         self.save_data(stock_data, regression_targets)
+
+
 
 
     def get_stock_data(self) -> pd.DataFrame:
@@ -73,7 +84,22 @@ class CreateStockData:
         stock_data_cleaned = combined_data.drop(columns=columns_to_delete)
         ########################################
         #remove date
-        #stock_data_cleaned = stock_data_cleaned.drop('Datetime', axis=1)
+        #stock_data_cleaned = stock_data_cleaned.drop('Date', axis=1)
+        return stock_data_cleaned
+    
+    def get_btc_data(self) -> pd.DataFrame:
+        data_frames = []
+        combined_data = pd.read_csv("BTC_RAW.csv")
+        combined_data.reset_index(inplace=True,drop=True)
+
+        # Identify and list columns that contain only zeros and are thus non-informative
+        columns_to_delete = [col for col in combined_data.columns if combined_data[col].sum() == 0]
+
+        # Remove the identified non-informative columns from the DataFrame
+        stock_data_cleaned = combined_data.drop(columns=columns_to_delete)
+        ########################################
+        #remove date
+        #stock_data_cleaned = stock_data_cleaned.drop('Date', axis=1)
         return stock_data_cleaned
 
     def prepare_features(self, stock_data: pd.DataFrame, observation_days: int) -> pd.DataFrame:
@@ -99,7 +125,7 @@ class CreateStockData:
             future_close = close_prices.shift(-day)
 
             # Calculate the  change for the regression target
-            regression_targets[f"Price_{day}-Day"] = future_close
+            regression_targets[f"Change_{day}"] = future_close
 
         return regression_targets.iloc[self.observation_days:-self.target_days]
 
@@ -116,7 +142,7 @@ class CreateStockData:
 
     def download_stock_data(self, symbol: str) -> pd.DataFrame:
         y = yf.Ticker(symbol)
-        hist = y.history(interval="5m", period="max")
+        hist = y.history(interval="1D", period="max")
         hist = hist.drop(columns=['Dividends', 'Stock Splits'], errors='ignore').dropna()
         return hist
 
@@ -142,5 +168,5 @@ if __name__ == '__main__':
     ]
 
     #24 = 2 hours
-    St = CreateStockData(1, 24, tickers, add_technical_indicators=True)
+    St = CreateStockData(1, 60, tickers, add_technical_indicators=False)
     St.process_stock_data()

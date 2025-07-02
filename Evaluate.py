@@ -7,7 +7,6 @@ from sklearn.metrics import (
     accuracy_score, mean_absolute_error, precision_score, recall_score, confusion_matrix, balanced_accuracy_score, root_mean_squared_error,
     mean_squared_error, mean_absolute_percentage_error, r2_score, f1_score, hamming_loss, explained_variance_score,mean_absolute_percentage_error, median_absolute_error, 
 )
-from pympler import asizeof
 def evaluate_model(model, X_train, X_test, y_train, y_test, data_logger):
     """
     Fits a model and evaluates it using specified metrics based on problem type (regression or classification).
@@ -95,4 +94,4 @@ def evaluate_model(model, X_train, X_test, y_train, y_test, data_logger):
     print(rmse)
     print("----------------------------------------")
     data_logger.save_info(model, "Full", results)
-    return rmse
+    return mape

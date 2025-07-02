@@ -22,9 +22,16 @@ from LoadStockDataset import LoadStockDataset
 import xgboost as xgb
 from sklearn.pipeline import Pipeline
 from sklearn.ensemble import StackingRegressor
+from sklearn.ensemble import RandomForestRegressor, ExtraTreesRegressor, GradientBoostingRegressor, HistGradientBoostingRegressor
+from sklearn.multioutput import MultiOutputRegressor
+from sklearn.linear_model import LinearRegression, Ridge, Lasso
+from sklearn.tree import DecisionTreeRegressor
+from sklearn.neighbors import KNeighborsRegressor
+from sklearn.svm import SVR
+
 
 #increments = [80,128,160,192,256,320,384,512,640,384*2] # Full Measures
-increments = [64,128,256,512,1024,1024*2,1024*4] #Half Measures
+increments = [32,64,128,256,512,1024,1024*2,1024*4] #Half Measures
 #increments = [64,128,128+64,256-32,256,256+64,384,384+64,448] #384 Band
 #increments = [64,96,128,192,256,384,512,1024,1024*2,1024*4]
 #increments = [64,96,128,160,192,256,384]#256 band
@@ -92,74 +99,37 @@ def sklearn_tests(dataset_id,dataset,ticker):
     data_logger = DataLogger(dataset_id,X_train.shape, len(X_train.shape), X_train.shape[0],
                              X_train.shape[1],num_outputs=y_train.shape[1])
 
-    
-    # Your classifiers and param distribution
-    classifiers = [
-        RandomForestRegressor(n_jobs=-1, random_state=42),
-        ExtraTreesRegressor(n_jobs=-1, random_state=42)
-    ]
 
-    param_dist = {
-        'n_estimators': [40],
-        'max_features': ['sqrt', 'log2'],  # fractions and options
-        'max_depth': [None, 5, 10, 20, 30],
-        'min_samples_split': [2, 3, 5, 10,],
-        'min_samples_leaf': [1, 2, 4, 8],
-        'bootstrap': [True],
-        'max_samples': [None, .25,0.5, 0.75],  # Only for bootstrap=True
-    }
-
+    nums = [10]
     best_score = float('inf')
     best_model = None
 
+    classifiers = []
+
+    for i in nums:
+        # Ensemble models with n_estimators param
+        classifiers.append(RandomForestRegressor(n_jobs=-1, n_estimators=i))
+        classifiers.append(ExtraTreesRegressor(n_jobs=-1, n_estimators=i))
+    """
+        # Single estimators without n_estimators param
+        classifiers.append(DecisionTreeRegressor())
+        classifiers.append(LinearRegression())
+        classifiers.append(Lasso())
+        classifiers.append(KNeighborsRegressor())
+    """
+        
+    # Evaluate each model using the training and test data
+    best_score = 1000
+    best_model = None
     for model in classifiers:
-        print(f"Running GridSearchCV for {model.__class__.__name__}...")
-        from sklearn.model_selection import GridSearchCV
-
-        grid_search = RandomizedSearchCV(
-            estimator=model,
-            param_distributions=param_dist,
-            n_iter=100,
-            cv=5,
-            scoring='neg_mean_absolute_percentage_error',  # or any other scoring metric suitable for evaluate_model
-            n_jobs=-1,
-            random_state=42,
-            verbose=1
-        )
-
-        # Fit on training data to find best params
-        grid_search.fit(X_train, y_train)
-        results = grid_search.cv_results_
-
-        # Collect scores, params, and ranks in a list
-        results_list = [
-            (mean_score, params, rank)
-            for mean_score, params, rank in zip(results['mean_test_score'], results['params'], results['rank_test_score'])
-        ]
-
-        # Sort by mean_score descending
-        results_list.sort(key=lambda x: x[0], reverse=True)
-
-        # Output only the lowest 5 scores
-        for mean_score, params, rank in results_list[:5]:
-            print(f"Rank: {rank} | Score: {-mean_score * 100:.4f} | Params: {params}")
-
-                        
-        # Get best estimator from search
-        best_estimator = grid_search.best_estimator_
-        print(f"Best params for {model.__class__.__name__}: {grid_search.best_params_}")
-        
-        # Evaluate the best estimator on your test data
-        score = evaluate_model(best_estimator, X_train, X_test, y_train, y_test, data_logger)
-        print(f"Evaluation score for best {model.__class__.__name__}: {score}")
-        
-        # Track the best overall model
+        score = evaluate_model(model, X_train, X_test, y_train, y_test, data_logger)
+        print(f"Model Complete:{model}")
         if score < best_score:
             best_score = score
-            best_model = best_estimator
-
-    print(f"Best model overall: {best_model.__class__.__name__} with score {best_score}")
+            best_model = model
+    print(type(best_model))
     joblib.dump(best_model, ticker +'_best_model.joblib')
+
 
 
 
@@ -418,7 +388,7 @@ if __name__ == '__main__':
     #cnn IGTD 6
     #bagging 7
     conds = [0]
-    id = "Experiment 1, BTC, 1D, NOIND"
+    id = "Experiment 1, BTC-1M, No Indicators"
     days_obs = 1
     norm = 0
     print("{0} Days used for this data!".format(days_obs))
