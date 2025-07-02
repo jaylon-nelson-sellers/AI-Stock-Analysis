@@ -68,10 +68,9 @@ def evaluate_model(model, X_train, X_test, y_train, y_test, data_logger):
     round_digits = 4
     results = [
         time_taken,
-        round(mae, round_digits),
         round(rmse, round_digits),
-        round(r2, round_digits),
-        round(mape,round_digits),
+        round(r2,round_digits),
+        round(mape*100,6),
         round(acc, round_digits),
         round(mba, round_digits),
         round(ham_acc, round_digits),

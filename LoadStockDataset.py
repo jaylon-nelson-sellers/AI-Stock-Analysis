@@ -34,11 +34,11 @@ class LoadStockDataset:
         return    
 
 
-    def get_train_test_split(self, split=0.2):
+    def get_train_test_split(self, split=0.2,shuffle=False):
         """
         Splits the features and targets into training and testing sets.
         """
-        return train_test_split(self.feats, self.targets, test_size=split, random_state=1)
+        return train_test_split(self.feats, self.targets, test_size=split, random_state=1,shuffle=shuffle)
 
     def is_power_of_two(self, n):
         return (n != 0) and (n & (n - 1) == 0)

@@ -116,7 +116,7 @@ class CreateStockData:
 
     def download_stock_data(self, symbol: str) -> pd.DataFrame:
         y = yf.Ticker(symbol)
-        hist = y.history(interval="5m", period="60d")
+        hist = y.history(interval="5m", period="max")
         hist = hist.drop(columns=['Dividends', 'Stock Splits'], errors='ignore').dropna()
         return hist
 
@@ -141,4 +141,6 @@ if __name__ == '__main__':
     'BTC-USD',
     ]
 
-    St = CreateStockData(1, 5, tickers, add_technical_indicators=True)
+    #24 = 2 hours
+    St = CreateStockData(1, 24, tickers, add_technical_indicators=True)
+    St.process_stock_data()
