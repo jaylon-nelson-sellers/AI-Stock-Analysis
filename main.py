@@ -31,9 +31,9 @@ from sklearn.svm import SVR
 
 
 #increments = [80,128,160,192,256,320,384,512,640,384*2] # Full Measures
-increments = [32,64,128,256,512,1024,1024*2,1024*4] #Half Measures
+increments = [2,4,8,16,32,64,128,256,512,1024,1024*2,1024*4] #Half Measures
 #increments = [64,128,128+64,256-32,256,256+64,384,384+64,448] #384 Band
-#increments = [64,96,128,192,256,384,512,1024,1024*2,1024*4]
+#increments = [64,96,128,192,256,384,512,1024,]
 #increments = [64,96,128,160,192,256,384]#256 band
 #increments = [16,24,32,48,64,96,128,192]
 
@@ -107,12 +107,17 @@ def sklearn_tests(dataset_id,dataset,ticker):
     classifiers = []
 
     
-
+    i = 10
     # Single estimators without n_estimators param
-    classifiers.append(DecisionTreeRegressor())
+    classifiers.append(RandomForestRegressor(n_jobs=-1,n_estimators=i))
+    classifiers.append(ExtraTreesRegressor(n_jobs=-1,n_estimators=i))
+    i = 20 
+    classifiers.append(RandomForestRegressor(n_jobs=-1,n_estimators=i))
+    classifiers.append(ExtraTreesRegressor(n_jobs=-1,n_estimators=i))
+    """   classifiers.append(DecisionTreeRegressor())
     classifiers.append(LinearRegression())
     classifiers.append(Lasso())
-    classifiers.append(KNeighborsRegressor())
+    classifiers.append(KNeighborsRegressor())"""
 
         
     # Evaluate each model using the training and test data
@@ -140,25 +145,40 @@ def xgb_tests(dataset_id,dataset):
                              X_train.shape[1],num_outputs=y_train.shape[1])
 
 
-    # Evaluate each model using the training and test data
-    best_score = -1
-    best_model = None
-    depths = []
+    from sklearn.model_selection import GridSearchCV
+    import joblib
+    import xgboost as xgb
+
+ 
+    max_depth = [3, 5, 7, 10]
+    learning_rate= [0.1,.01]
+    best_score = 1000
+    # Create XGBRegressor with GPU support
     for i in increments:
-        model = xgb.XGBRegressor(
-                n_estimators=i,
-                learning_rate=0.1,
-                device='cuda',  # Use GPU acceleratio
-                n_jobs=-1,
+        for m in max_depth:
+            for l in learning_rate:
+                model = xgb.XGBRegressor(
+                    n_estimators = i,
+                    device="cuda",
+                    n_jobs=-1,
+                    max_depth = m,
+                    learning_rate = l,
+                    verbose=2
+                )
+                
+                # Evaluate best model on test set using your evaluate_model function
+                score = evaluate_model(model, X_train, X_test, y_train, y_test, data_logger)
+                print(f"Test score: {score}")
+                        
+                if score < best_score:
+                    best_score = score
+                    best_model = model
+                print(type(best_model))
 
-        )
-        score = evaluate_model(model, X_train, X_test, y_train, y_test, data_logger)
-        print(f"Model Complete:{model}")
-        if score > best_score:
-            best_score = score
-            best_model = model
+   
+    # Save the best model
+    joblib.dump(best_model, 'best_xgb_model.joblib')
 
-    joblib.dump(best_model, 'best__xgb_model.joblib')
 
 def nn_tests(dataset_id, dataset):
     """ Test neural network models on a specified dataset.
@@ -219,7 +239,7 @@ def reccurent_tests(dataset_id, df,dims=2,stock_check=False):
 
     X_train, X_test, y_train = convert_data_to_tensors(X_train, X_test, y_train, image_bool=not stock_check)
 
-    layers = [1]
+    layers = [1,2,3]
     dropouts = [0]
     best_score = 1000
     best_model = None
@@ -227,7 +247,7 @@ def reccurent_tests(dataset_id, df,dims=2,stock_check=False):
         for n in increments:
             for dropout in dropouts:
 
-                model = EasyRecNet(X_train.shape[2], y_train.shape[1], n, l, dropout=dropout,criterion="HuberLoss",learning_rate=0.001, problem_type=1,
+                model = EasyRecNet(X_train.shape[2], y_train.shape[1], n, l, dropout=dropout,criterion="HuberLoss",learning_rate=0.0001, problem_type=1,
                                         verbose=True)
                 curr_score = evaluate_model(model, X_train, X_test, y_train, y_test, data_logger)
                 print(curr_score)
@@ -385,8 +405,8 @@ if __name__ == '__main__':
     #cnn IGTD 6
     #bagging 7
     conds = [0]
-    id = "Experiment 1, BTC-1M, No Indicators"
-    days_obs = 1
+    id = "Experiment 1, BTC-5M, No Indicators"
+    days_obs = 10
     norm = 0
     print("{0} Days used for this data!".format(days_obs))
     #conds = [1]
@@ -397,11 +417,11 @@ if __name__ == '__main__':
             dummy_tests(id,dataset)
             sklearn_tests(id,dataset,ticker="BTC-USD")
         if cond == 1:
-            ld = LoadStockDataset(dataset_index=1,normalize=norm)
+            ld = LoadStockDataset(dataset_index=1,normalize=norm,tickers=["BTC-USD"])
             dataset = ld.get_train_test_split()
             xgb_tests(id,dataset)
         if cond == 2:
-            ld = LoadStockDataset(dataset_index=1,normalize=norm)
+            ld = LoadStockDataset(dataset_index=1,normalize=norm,tickers=["BTC-USD"])
             dataset = ld.get_train_test_split()
             nn_tests(id,dataset)
         if cond == -3:
@@ -409,11 +429,11 @@ if __name__ == '__main__':
             dataset = ld.get_3d(version=1)
             reccurent_tests(id,dataset)
         if cond == 3:
-            ld = LoadStockDataset(dataset_index=days_obs,normalize=1)
+            ld = LoadStockDataset(dataset_index=days_obs,normalize=norm,tickers=["BTC-USD"])
             dataset = ld.get_3d(version=1)
             reccurent_tests(id,dataset)
         if cond == 4:
-            ld = LoadStockDataset(dataset_index=days_obs,normalize=norm)
+            ld = LoadStockDataset(dataset_index=days_obs,normalize=norm,tickers=["BTC-USD"])
             dataset = ld.get_3d(version=1)        
             lstm_tests(id,dataset)
         if cond == -4:

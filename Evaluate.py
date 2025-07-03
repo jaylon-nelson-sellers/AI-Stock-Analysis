@@ -5,8 +5,9 @@ import pandas as pd
 import sys
 from sklearn.metrics import (
     accuracy_score, mean_absolute_error, precision_score, recall_score, confusion_matrix, balanced_accuracy_score, root_mean_squared_error,
-    mean_squared_error, mean_absolute_percentage_error, r2_score, f1_score, hamming_loss, explained_variance_score,mean_absolute_percentage_error, median_absolute_error, 
+    mean_squared_error, mean_absolute_percentage_error, r2_score, f1_score, hamming_loss, explained_variance_score
 )
+from pympler import asizeof
 def evaluate_model(model, X_train, X_test, y_train, y_test, data_logger):
     """
     Fits a model and evaluates it using specified metrics based on problem type (regression or classification).
@@ -20,29 +21,27 @@ def evaluate_model(model, X_train, X_test, y_train, y_test, data_logger):
                                  precision_score, recall_score, f1_score, mean_absolute_error,
                                  r2_score)
     
+    # Assuming that there's a custom function for RMSE
+    def root_mean_squared_error(y_true, y_pred):
+        return np.sqrt(np.mean((y_true - y_pred) ** 2))
+
     start = time.time()
 
     # Fit the model to the training data
     model.fit(X_train, y_train)
+
     # Generate predictions using the model
     predictions = model.predict(X_test)
     end = time.time()
     time_taken = end - start
     y_test = np.array(y_test)
 
-    # The first column is the current stock price placeholder
-    # We want to compare each remaining column's predicted and actual values relative to the first column.
+    # Convert float predictions to binary (0 or 1)
+    binary_predictions = np.where(predictions > 0, 1, 0)
+    # Ensure y_test is also binary
+    y_test_binary = np.where(y_test > 0, 1, 0)
 
-    # Calculate direction of movement for predictions relative to first column
-    # 1 if went up or stayed same, 0 if went down
-    pred_direction = (predictions[:, 1:] - predictions[:, [0]]) >= 0
-    binary_predictions = pred_direction.astype(int)
-
-    # Similarly, calculate direction for actual y_test relative to first column
-    actual_direction = (y_test[:, 1:] - y_test[:, [0]]) >= 0
-    y_test_binary = actual_direction.astype(int)
-
-    # Now compute balanced accuracy for each output column and average it
+    # Compute balanced accuracy for each output column and take the mean
     balanced_accuracies = 0
     for i in range(y_test_binary.shape[1]):
         balanced_acc = balanced_accuracy_score(y_test_binary[:, i], binary_predictions[:, i])
@@ -51,25 +50,22 @@ def evaluate_model(model, X_train, X_test, y_train, y_test, data_logger):
 
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        # For overall accuracy, hamming loss, precision, recall, f1 - compare binary labels
         acc = accuracy_score(y_test_binary, binary_predictions)
         ham_acc = 1 - hamming_loss(y_test_binary, binary_predictions)
         precision = precision_score(y_test_binary, binary_predictions, average="weighted")
         recall = recall_score(y_test_binary, binary_predictions, average="weighted")
         f1 = f1_score(y_test_binary, binary_predictions, average="weighted")
-
-        # For regression metrics like MAE, RMSE, R2 use the original values from columns 1 onward only
-        mae = mean_absolute_error(y_test[:, 1:], predictions[:, 1:])
-        rmse = root_mean_squared_error(y_test[:, 1:], predictions[:, 1:])
-        mape = mean_absolute_percentage_error(y_test[:, 1:], predictions[:, 1:])
-        r2 = r2_score(y_test[:, 1:], predictions[:, 1:])
+        mae = mean_absolute_error(y_test, predictions)
+        rmse = root_mean_squared_error(y_test, predictions)
+        r2 = r2_score(y_test, predictions)
 
     round_digits = 4
+    # Initial set of overall results
     results = [
         time_taken,
+        round(mae, round_digits),
         round(rmse, round_digits),
-        round(r2,round_digits),
-        round(mape*100,6),
+        round(r2, round_digits),
         round(acc, round_digits),
         round(mba, round_digits),
         round(ham_acc, round_digits),
@@ -78,19 +74,28 @@ def evaluate_model(model, X_train, X_test, y_train, y_test, data_logger):
         round(f1, round_digits)
     ]
 
+    # Dynamically add per-output metrics:
+    # First, accuracy for each output then mean absolute error for each output.
     per_output_accuracies = []
     per_output_maes = []
-
+    
+    # Loop over each output column. Assumes predictions and y_test have same shape.
     n_outputs = y_test_binary.shape[1]
     for i in range(n_outputs):
+        # Compute accuracy for the i-th output using binary predictions
         output_acc = balanced_accuracy_score(y_test_binary[:, i], binary_predictions[:, i])
         per_output_accuracies.append(round(output_acc, round_digits))
-
-        output_mae = mean_absolute_error(y_test[:, i+1], predictions[:, i+1])
+        
+        # Compute MAE for the i-th output using raw predictions
+        output_mae = mean_absolute_error(y_test[:, i], predictions[:, i])
         per_output_maes.append(round(output_mae, round_digits))
-
+    
+    # Extend the results object with per-output accuracies first then maes.
     results.extend(per_output_accuracies + per_output_maes)
 
+    # If you are logging data, consider adding the new columns to your data_logger here.
+    # For example: data_logger.log_results(results)
+    print("----------------------------------------")
     print(rmse)
     print("----------------------------------------")
     data_logger.save_info(model, "Full", results)
