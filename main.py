@@ -1,15 +1,16 @@
 import joblib
 import pandas as pd
-from sklearn.dummy import DummyRegressor
-from sklearn.ensemble import BaggingRegressor, ExtraTreesRegressor, RandomForestRegressor, HistGradientBoostingClassifier, HistGradientBoostingRegressor, \
+from sklearn.decomposition import PCA
+from sklearn.dummy import DummyClassifier, DummyRegressor
+from sklearn.ensemble import BaggingRegressor, ExtraTreesClassifier, ExtraTreesRegressor, RandomForestClassifier, RandomForestRegressor, HistGradientBoostingClassifier, HistGradientBoostingRegressor, \
     AdaBoostRegressor, VotingRegressor
 from sklearn.linear_model import Lasso, Ridge, LinearRegression, LogisticRegression
-from sklearn.model_selection import RandomizedSearchCV
+from sklearn.model_selection import GridSearchCV, RandomizedSearchCV
 from sklearn.multioutput import MultiOutputRegressor
-from sklearn.neighbors import KNeighborsRegressor
+from sklearn.neighbors import KNeighborsClassifier, KNeighborsRegressor
 from sklearn.neural_network import BernoulliRBM
 from sklearn.pipeline import Pipeline
-from sklearn.tree import DecisionTreeRegressor
+from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
 import torch
 import numpy as np
 from DataLogger import DataLogger
@@ -86,7 +87,7 @@ def dummy_tests(dataset_id,dataset):
     X_train.shape[1], num_outputs=y_train.shape[1])
 
     # Get dummy classifiers or regressors based on the problem type
-    classifiers = DummyRegressor()
+    classifiers = DummyClassifier()
     # Evaluate each model using the training and test data
 
     evaluate_model(classifiers, X_train, X_test, y_train, y_test, data_logger)
@@ -106,15 +107,8 @@ def sklearn_tests(dataset_id,dataset,ticker):
     best_model = None
 
     classifiers = []
-
-
-    #
-    classifiers.append(LinearRegression())
-    classifiers.append(Lasso())
-    classifiers.append(DecisionTreeRegressor())
-    classifiers.append(KNeighborsRegressor())
-
-        
+    classifiers.append(DecisionTreeClassifier())
+    classifiers.append(KNeighborsClassifier())
     # Evaluate each model using the training and test data
     best_score = 1000
     best_model = None
@@ -126,7 +120,6 @@ def sklearn_tests(dataset_id,dataset,ticker):
             best_model = model
     print(type(best_model))
     joblib.dump(best_model, ticker +'_bes_sk_model.joblib')
-
 
 def tree_tests(dataset_id,dataset,ticker):
 
@@ -144,21 +137,21 @@ def tree_tests(dataset_id,dataset,ticker):
 
     classifiers = []
 
-    increments = [2,4,8,16,32,64,128,256,] #Half Measures
+    increments = [2,4,8,16,32,64,128,256,512] #Half Measures
 
     # Evaluate each model using the training and test data
     best_score = 1000
     best_model = None
     for i in increments:
 
-        model = RandomForestRegressor(n_jobs=-1,n_estimators=i)
+        model = RandomForestClassifier(n_jobs=-1,n_estimators=i)
         score = evaluate_model(model, X_train, X_test, y_train, y_test, data_logger)
         print(f"Model Complete:{model}")
         if score < best_score:
             best_score = score
             best_model = model
         
-        model = ExtraTreesRegressor(n_jobs=-1,n_estimators=i)
+        model = ExtraTreesClassifier(n_jobs=-1,n_estimators=i)
         score = evaluate_model(model, X_train, X_test, y_train, y_test, data_logger)
         print(f"Model Complete:{model}")
         if score < best_score:
@@ -450,7 +443,7 @@ if __name__ == '__main__':
     norm = 0
     print("{0} Days used for this data!".format(days_obs))
     #conds = [1]
-    ticker =['BTC-USD']
+    ticker =['^GSPC']
     for cond in conds:
         if cond == 0:
             ld = LoadStockDataset(dataset_index=1,normalize=norm,tickers=ticker)

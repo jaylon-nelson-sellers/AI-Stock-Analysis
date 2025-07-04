@@ -37,7 +37,7 @@ class CreateStockData:
         return stock_data
 
     def process_stock_data(self):
-        stock_data = self.get_btc_data()
+        stock_data = self.get_stock_data()
         if self.add_ta:
                 stock_data = self.add_technical_indicators(stock_data)
 
@@ -91,7 +91,7 @@ class CreateStockData:
     
     def get_btc_data(self) -> pd.DataFrame:
         data_frames = []
-        combined_data = pd.read_csv("BTC_RAW.csv")
+        combined_data = pd.read_csv("BTC_5min.csv")
         combined_data.reset_index(inplace=True,drop=True)
 
         # Identify and list columns that contain only zeros and are thus non-informative
@@ -127,7 +127,7 @@ class CreateStockData:
             future_close = close_prices.shift(-day)
 
             # Calculate the  change for the regression target
-            regression_targets[f"Change_{day}-Day"] = future_close
+            regression_targets[f"Change_{day}-Day"] = (future_close > close_prices).astype(int)
 
         return regression_targets.iloc[self.observation_days:-self.target_days]
 
@@ -166,9 +166,9 @@ class CreateStockData:
 if __name__ == '__main__':
     num_stocks = 1
     tickers = [
-    'BTC-USD',
+    '^GSPC',
     ]
 
     #24 = 2 hours
-    St = CreateStockData(1, 12, tickers, add_technical_indicators=True)
+    St = CreateStockData(1, 10, tickers, add_technical_indicators=True)
     St.process_stock_data()
