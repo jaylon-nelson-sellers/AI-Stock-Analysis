@@ -1,7 +1,5 @@
 import warnings
 import pandas as pd
-from sklearn.discriminant_analysis import StandardScaler
-from sklearn.preprocessing import RobustScaler
 import yfinance as yf
 from ta import add_all_ta_features
 from pathlib import Path
@@ -38,17 +36,8 @@ class CreateStockData:
 
     def process_stock_data(self):
         stock_data = self.get_stock_data()
-        if self.add_ta:
-                stock_data = self.add_technical_indicators(stock_data)
 
         regression_targets = self.calculate_targets(stock_data['Close'], self.target_days)
-
-        
-        scaler = RobustScaler()
-        scaled_array = scaler.fit_transform(stock_data.values)
-
-        # Convert back to DataFrame with original columns and index preserved
-        stock_data = pd.DataFrame(scaled_array, columns=stock_data.columns, index=stock_data.index)
 
         stock_data = stock_data.iloc[:-self.target_days]
 
@@ -64,8 +53,6 @@ class CreateStockData:
         self.save_data(stock_data, regression_targets)
 
 
-
-
     def get_stock_data(self) -> pd.DataFrame:
         data_frames = []
         for ticker in self.tickers:
@@ -78,21 +65,6 @@ class CreateStockData:
             data_frames.append(data)
 
         combined_data = pd.concat(data_frames, axis=0).reset_index()
-
-        # Identify and list columns that contain only zeros and are thus non-informative
-        columns_to_delete = [col for col in combined_data.columns if combined_data[col].sum() == 0]
-
-        # Remove the identified non-informative columns from the DataFrame
-        stock_data_cleaned = combined_data.drop(columns=columns_to_delete)
-        ########################################
-        #remove date
-        #stock_data_cleaned = stock_data_cleaned.drop('Datetime', axis=1)
-        return stock_data_cleaned
-    
-    def get_btc_data(self) -> pd.DataFrame:
-        data_frames = []
-        combined_data = pd.read_csv("BTC_5min.csv")
-        combined_data.reset_index(inplace=True,drop=True)
 
         # Identify and list columns that contain only zeros and are thus non-informative
         columns_to_delete = [col for col in combined_data.columns if combined_data[col].sum() == 0]
@@ -123,11 +95,11 @@ class CreateStockData:
     def calculate_targets(self, close_prices: pd.Series, future_days: int) -> pd.DataFrame:
         regression_targets = pd.DataFrame(index=close_prices.index)
 
-        for day in range(1,future_days + 1):
+        for day in range(future_days + 1):
             future_close = close_prices.shift(-day)
 
             # Calculate the  change for the regression target
-            regression_targets[f"Change_{day}-Day"] = (future_close > close_prices).astype(int)
+            regression_targets[f"Price_{day}-Day"] = future_close
 
         return regression_targets.iloc[self.observation_days:-self.target_days]
 
@@ -144,7 +116,7 @@ class CreateStockData:
 
     def download_stock_data(self, symbol: str) -> pd.DataFrame:
         y = yf.Ticker(symbol)
-        hist = y.history(interval="1D", period="max")
+        hist = y.history(interval="5m", period="60d")
         hist = hist.drop(columns=['Dividends', 'Stock Splits'], errors='ignore').dropna()
         return hist
 
@@ -166,9 +138,7 @@ class CreateStockData:
 if __name__ == '__main__':
     num_stocks = 1
     tickers = [
-    '^GSPC',
+    'BTC-USD',
     ]
 
-    #24 = 2 hours
-    St = CreateStockData(1, 10, tickers, add_technical_indicators=True)
-    St.process_stock_data()
+    St = CreateStockData(1, 5, tickers, add_technical_indicators=True)

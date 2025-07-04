@@ -1,16 +1,14 @@
 import joblib
 import pandas as pd
-from sklearn.decomposition import PCA
-from sklearn.dummy import DummyClassifier, DummyRegressor
-from sklearn.ensemble import BaggingRegressor, ExtraTreesClassifier, ExtraTreesRegressor, RandomForestClassifier, RandomForestRegressor, HistGradientBoostingClassifier, HistGradientBoostingRegressor, \
+from sklearn.dummy import DummyRegressor
+from sklearn.ensemble import BaggingRegressor, ExtraTreesRegressor, RandomForestRegressor, HistGradientBoostingClassifier, HistGradientBoostingRegressor, \
     AdaBoostRegressor, VotingRegressor
 from sklearn.linear_model import Lasso, Ridge, LinearRegression, LogisticRegression
-from sklearn.model_selection import GridSearchCV, RandomizedSearchCV
 from sklearn.multioutput import MultiOutputRegressor
-from sklearn.neighbors import KNeighborsClassifier, KNeighborsRegressor
+from sklearn.neighbors import KNeighborsRegressor
 from sklearn.neural_network import BernoulliRBM
 from sklearn.pipeline import Pipeline
-from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
+from sklearn.tree import DecisionTreeRegressor
 import torch
 import numpy as np
 from DataLogger import DataLogger
@@ -23,19 +21,11 @@ from LoadStockDataset import LoadStockDataset
 import xgboost as xgb
 from sklearn.pipeline import Pipeline
 from sklearn.ensemble import StackingRegressor
-from sklearn.ensemble import RandomForestRegressor, ExtraTreesRegressor, GradientBoostingRegressor, HistGradientBoostingRegressor
-from sklearn.multioutput import MultiOutputRegressor
-from sklearn.linear_model import LinearRegression, Ridge, Lasso
-from sklearn.tree import DecisionTreeRegressor
-from sklearn.neighbors import KNeighborsRegressor
-from sklearn.svm import SVR
-
 
 #increments = [80,128,160,192,256,320,384,512,640,384*2] # Full Measures
-increments = [16,32,64,128,256,512,1024,1024*2,1024*4] #Half Measures
-#increments = [128,256,512,1024]
+increments = [64,128,256,512,1024,1024*2,1024*4] #Half Measures
 #increments = [64,128,128+64,256-32,256,256+64,384,384+64,448] #384 Band
-#increments = [64,96,128,192,256,384,512,1024,]
+#increments = [64,96,128,192,256,384,512,1024,1024*2,1024*4]
 #increments = [64,96,128,160,192,256,384]#256 band
 #increments = [16,24,32,48,64,96,128,192]
 
@@ -87,7 +77,7 @@ def dummy_tests(dataset_id,dataset):
     X_train.shape[1], num_outputs=y_train.shape[1])
 
     # Get dummy classifiers or regressors based on the problem type
-    classifiers = DummyClassifier()
+    classifiers = DummyRegressor()
     # Evaluate each model using the training and test data
 
     evaluate_model(classifiers, X_train, X_test, y_train, y_test, data_logger)
@@ -101,14 +91,27 @@ def sklearn_tests(dataset_id,dataset,ticker):
     data_logger = DataLogger(dataset_id,X_train.shape, len(X_train.shape), X_train.shape[0],
                              X_train.shape[1],num_outputs=y_train.shape[1])
 
+    # Get sklearn classifiers or regressors based on the problem type
+    classifiers = [
+        
+        #LinearRegression(),
+        #DecisionTreeRegressor()
+    ]
+    nums = [100]
+        
+    param_dist = {
+        'n_estimators': [100, 300, 500],
+        'max_features': ['auto', 'sqrt', 0.3, 0.5],
+        'max_depth': [None, 10, 20, 30],
+        'min_samples_split': [2, 5, 10],
+        'min_samples_leaf': [1, 2, 4],
+        'bootstrap': [False, True]
+    }
+    for i in nums:
 
-    nums = [10]
-    best_score = float('inf')
-    best_model = None
-
-    classifiers = []
-    classifiers.append(DecisionTreeClassifier())
-    classifiers.append(KNeighborsClassifier())
+        classifiers.append(ExtraTreesRegressor(n_jobs=-1,n_estimators=i),
+        )
+        
     # Evaluate each model using the training and test data
     best_score = 1000
     best_model = None
@@ -119,99 +122,39 @@ def sklearn_tests(dataset_id,dataset,ticker):
             best_score = score
             best_model = model
     print(type(best_model))
-    joblib.dump(best_model, ticker +'_bes_sk_model.joblib')
-
-def tree_tests(dataset_id,dataset,ticker):
-
-    # Load the dataset and split into training and testing sets
-
-    X_train, X_test, y_train, y_test = dataset
-
-    data_logger = DataLogger(dataset_id,X_train.shape, len(X_train.shape), X_train.shape[0],
-                             X_train.shape[1],num_outputs=y_train.shape[1])
-
-
-    nums = [10]
-    best_score = float('inf')
-    best_model = None
-
-    classifiers = []
-
-    increments = [2,4,8,16,32,64,128,256,512] #Half Measures
-
-    # Evaluate each model using the training and test data
-    best_score = 1000
-    best_model = None
-    for i in increments:
-
-        model = RandomForestClassifier(n_jobs=-1,n_estimators=i)
-        score = evaluate_model(model, X_train, X_test, y_train, y_test, data_logger)
-        print(f"Model Complete:{model}")
-        if score < best_score:
-            best_score = score
-            best_model = model
-        
-        model = ExtraTreesClassifier(n_jobs=-1,n_estimators=i)
-        score = evaluate_model(model, X_train, X_test, y_train, y_test, data_logger)
-        print(f"Model Complete:{model}")
-        if score < best_score:
-            best_score = score
-            best_model = model
-        
-    print(type(best_model))
-    joblib.dump(best_model, ticker +'_best_tree_model.joblib')
+    joblib.dump(best_model, ticker +'_best_model.joblib')
 
 
 
 def xgb_tests(dataset_id,dataset):
 
+    # Load the dataset and split into training and testing sets
 
     X_train, X_test, y_train, y_test = dataset
-    from sklearn.model_selection import train_test_split
-    import xgboost as xgb
-    import joblib
-
-    # Assuming X_train, y_train are your original training data (before this loop)
-    # Split training data into train + validation for early stopping
-    X_train_new, X_val, y_train_new, y_val = train_test_split(
-        X_train, y_train, test_size=0.2, random_state=42, shuffle=True
-    )
-
-    
     X_train, X_test, y_train = convert_data_to_tensors(X_train, X_test, y_train,image_bool=not True)
     data_logger = DataLogger(dataset_id,X_train.shape, len(X_train.shape), X_train.shape[0],
                              X_train.shape[1],num_outputs=y_train.shape[1])
 
-    increments = [16,32,64,128,256,512,1024,1024*2,1024*4]
-    max_depth = [None]
-    learning_rate= [0.1]
-    best_score = 1000
+
+    # Evaluate each model using the training and test data
+    best_score = -1
     best_model = None
-
+    depths = []
     for i in increments:
-        for m in max_depth:
-            for l in learning_rate:
-                model = xgb.XGBRegressor(
-                    n_estimators=i,
-                    device="cuda",
-                    n_jobs=-1,
-                    max_depth=m,
-                    learning_rate=l,
-                    verbosity=1,
-                    # early_stopping_rounds parameter should be passed inside fit() not here directly
-                )
-                
-                
-                # Now evaluate model on your test set
-                score = evaluate_model(model, X_train_new, X_test, y_train_new, y_test, data_logger)
-                print(f"Test score: {score}")
-                
-                if score < best_score:
-                    best_score = score
-                    best_model = model
+        model = xgb.XGBRegressor(
+                n_estimators=i,
+                learning_rate=0.1,
+                device='cuda',  # Use GPU acceleratio
+                n_jobs=-1,
 
-    print("Best model params:", best_model.get_params())
+        )
+        score = evaluate_model(model, X_train, X_test, y_train, y_test, data_logger)
+        print(f"Model Complete:{model}")
+        if score > best_score:
+            best_score = score
+            best_model = model
 
+    joblib.dump(best_model, 'best__xgb_model.joblib')
 
 def nn_tests(dataset_id, dataset):
     """ Test neural network models on a specified dataset.
@@ -272,7 +215,7 @@ def reccurent_tests(dataset_id, df,dims=2,stock_check=False):
 
     X_train, X_test, y_train = convert_data_to_tensors(X_train, X_test, y_train, image_bool=not stock_check)
 
-    layers = [1,2,3]
+    layers = [1]
     dropouts = [0]
     best_score = 1000
     best_model = None
@@ -280,7 +223,7 @@ def reccurent_tests(dataset_id, df,dims=2,stock_check=False):
         for n in increments:
             for dropout in dropouts:
 
-                model = EasyRecNet(X_train.shape[2], y_train.shape[1], n, l, dropout=dropout,criterion="HuberLoss",learning_rate=0.0001, problem_type=1,
+                model = EasyRecNet(X_train.shape[2], y_train.shape[1], n, l, dropout=dropout,criterion="HuberLoss",learning_rate=0.001, problem_type=1,
                                         verbose=True)
                 curr_score = evaluate_model(model, X_train, X_test, y_train, y_test, data_logger)
                 print(curr_score)
@@ -437,26 +380,24 @@ if __name__ == '__main__':
     #cnn nerf -5
     #cnn IGTD 6
     #bagging 7
-    conds = [0]
-    id = "Experiment 2, Full,BTC-5M, Scaled Data"
-    days_obs = 1
+    conds = [0,3,4]
+    id = "Experiment 1, BTC, 10D"
+    days_obs = 10
     norm = 0
     print("{0} Days used for this data!".format(days_obs))
     #conds = [1]
-    ticker =['^GSPC']
     for cond in conds:
         if cond == 0:
-            ld = LoadStockDataset(dataset_index=1,normalize=norm,tickers=ticker)
+            ld = LoadStockDataset(dataset_index=1,normalize=norm,)
             dataset = ld.get_train_test_split()
             dummy_tests(id,dataset)
-            sklearn_tests(id,dataset,ticker=ticker[0])
-            tree_tests(id,dataset,ticker=ticker[0])
+            sklearn_tests(id,dataset)
         if cond == 1:
-            ld = LoadStockDataset(dataset_index=1,normalize=norm,tickers=ticker)
+            ld = LoadStockDataset(dataset_index=1,normalize=norm)
             dataset = ld.get_train_test_split()
             xgb_tests(id,dataset)
         if cond == 2:
-            ld = LoadStockDataset(dataset_index=1,normalize=norm,tickers=ticker)
+            ld = LoadStockDataset(dataset_index=1,normalize=norm)
             dataset = ld.get_train_test_split()
             nn_tests(id,dataset)
         if cond == -3:
@@ -464,11 +405,11 @@ if __name__ == '__main__':
             dataset = ld.get_3d(version=1)
             reccurent_tests(id,dataset)
         if cond == 3:
-            ld = LoadStockDataset(dataset_index=days_obs,normalize=norm,tickers=ticker)
+            ld = LoadStockDataset(dataset_index=days_obs,normalize=1)
             dataset = ld.get_3d(version=1)
             reccurent_tests(id,dataset)
         if cond == 4:
-            ld = LoadStockDataset(dataset_index=days_obs,normalize=norm,tickers=ticker)
+            ld = LoadStockDataset(dataset_index=days_obs,normalize=norm)
             dataset = ld.get_3d(version=1)        
             lstm_tests(id,dataset)
         if cond == -4:

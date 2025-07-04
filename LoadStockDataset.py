@@ -15,7 +15,7 @@ class LoadStockDataset:
     A class to load, preprocess, normalize, and select features from a dataset.
     """
 
-    def __init__(self, dataset_index, tickers, normalize=0, verbose=0,):
+    def __init__(self, dataset_index, tickers, normalize=1, verbose=0,):
         """
         Initializes the dataset by loading files, normalizing features, and selecting features based on the parameters.
         """
@@ -27,16 +27,18 @@ class LoadStockDataset:
         self.observed = dataset_index
         self.feats = pd.read_csv(ticker + "_feats.csv")
         #NOTE Deletes DATE column
-        #self.feats.to_csv(ticker + "_feats.csv", index=False)
+        if normalize:
+            self.normalize()
+        self.feats.to_csv(ticker + "_feats.csv", index=False)
         self.targets = pd.read_csv(ticker +"_regress.csv")
         return    
 
 
-    def get_train_test_split(self, split=0.1,shuffle=False):
+    def get_train_test_split(self, split=0.2):
         """
         Splits the features and targets into training and testing sets.
         """
-        return train_test_split(self.feats, self.targets, test_size=split, random_state=1,shuffle=shuffle)
+        return train_test_split(self.feats, self.targets, test_size=split, random_state=1)
 
     def is_power_of_two(self, n):
         return (n != 0) and (n & (n - 1) == 0)
