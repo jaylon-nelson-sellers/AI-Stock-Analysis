@@ -15,9 +15,10 @@ def filter_to_5min_intervals_keep_unix(input_file='BTC_RAW.csv', output_file='BT
     
     # Drop the temporary datetime column
     df_filtered = df_filtered.drop(columns=['Datetime_dt'])
-    
+    df_filtered = df_filtered.iloc[150_000:].reset_index(drop=True)
     # Save with original UNIX timestamp column intact
     df_filtered.to_csv(output_file, index=False)
     print(f"Saved filtered 5-minute interval data with UNIX timestamps to {output_file}")
+
 
 filter_to_5min_intervals_keep_unix()

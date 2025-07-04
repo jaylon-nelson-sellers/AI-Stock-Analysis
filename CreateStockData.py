@@ -38,15 +38,17 @@ class CreateStockData:
 
     def process_stock_data(self):
         stock_data = self.get_btc_data()
+        if self.add_ta:
+                stock_data = self.add_technical_indicators(stock_data)
 
         regression_targets = self.calculate_targets(stock_data['Close'], self.target_days)
 
         
-        #scaler = RobustScaler()
-        #scaled_array = scaler.fit_transform(stock_data.values)
+        scaler = RobustScaler()
+        scaled_array = scaler.fit_transform(stock_data.values)
 
         # Convert back to DataFrame with original columns and index preserved
-       # stock_data = pd.DataFrame(scaled_array, columns=stock_data.columns, index=stock_data.index)
+        stock_data = pd.DataFrame(scaled_array, columns=stock_data.columns, index=stock_data.index)
 
         stock_data = stock_data.iloc[:-self.target_days]
 
@@ -84,7 +86,7 @@ class CreateStockData:
         stock_data_cleaned = combined_data.drop(columns=columns_to_delete)
         ########################################
         #remove date
-        #stock_data_cleaned = stock_data_cleaned.drop('Date', axis=1)
+        #stock_data_cleaned = stock_data_cleaned.drop('Datetime', axis=1)
         return stock_data_cleaned
     
     def get_btc_data(self) -> pd.DataFrame:
@@ -99,7 +101,7 @@ class CreateStockData:
         stock_data_cleaned = combined_data.drop(columns=columns_to_delete)
         ########################################
         #remove date
-        stock_data_cleaned = stock_data_cleaned.drop('Datetime', axis=1)
+        #stock_data_cleaned = stock_data_cleaned.drop('Datetime', axis=1)
         return stock_data_cleaned
 
     def prepare_features(self, stock_data: pd.DataFrame, observation_days: int) -> pd.DataFrame:
@@ -125,7 +127,7 @@ class CreateStockData:
             future_close = close_prices.shift(-day)
 
             # Calculate the  change for the regression target
-            regression_targets[f"Change_{day}-Day"] = ((future_close/close_prices)-1)*100
+            regression_targets[f"Change_{day}-Day"] = future_close
 
         return regression_targets.iloc[self.observation_days:-self.target_days]
 
@@ -142,7 +144,7 @@ class CreateStockData:
 
     def download_stock_data(self, symbol: str) -> pd.DataFrame:
         y = yf.Ticker(symbol)
-        hist = y.history(interval="5m", period="max")
+        hist = y.history(interval="1D", period="max")
         hist = hist.drop(columns=['Dividends', 'Stock Splits'], errors='ignore').dropna()
         return hist
 
@@ -168,5 +170,5 @@ if __name__ == '__main__':
     ]
 
     #24 = 2 hours
-    St = CreateStockData(1, 5, tickers, add_technical_indicators=False)
+    St = CreateStockData(1, 12, tickers, add_technical_indicators=True)
     St.process_stock_data()

@@ -32,7 +32,7 @@ class LoadStockDataset:
         return    
 
 
-    def get_train_test_split(self, split=0.2,shuffle=False):
+    def get_train_test_split(self, split=0.1,shuffle=False):
         """
         Splits the features and targets into training and testing sets.
         """
